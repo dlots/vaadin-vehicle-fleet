@@ -1,32 +1,68 @@
 package com.github.dlots.vehiclefleet.views.vehicles;
 
-import com.vaadin.flow.component.html.H2;
-import com.vaadin.flow.component.html.Image;
-import com.vaadin.flow.component.html.Paragraph;
+import com.github.dlots.vehiclefleet.data.entity.Vehicle;
+import com.github.dlots.vehiclefleet.data.service.CrmService;
+import com.github.dlots.vehiclefleet.views.MainLayout;
+import com.vaadin.flow.component.button.Button;
+import com.vaadin.flow.component.grid.Grid;
+import com.vaadin.flow.component.icon.VaadinIcon;
+import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
-import com.vaadin.flow.router.RouteAlias;
 
-@PageTitle("Vehicles")
-@Route(value = "vehicles")
-@RouteAlias(value = "")
+@PageTitle("Vehicles | Vehicle fleet")
+@Route(value = "", layout = MainLayout.class)
 public class VehiclesView extends VerticalLayout {
+    private final Grid<Vehicle> grid;
 
-    public VehiclesView() {
-        setSpacing(false);
+    private final CrmService service;
 
-        Image img = new Image("images/empty-plant.png", "placeholder plant");
-        img.setWidth("200px");
-        add(img);
+    private final VehicleEditor editor;
 
-        add(new H2("This place intentionally left empty"));
-        add(new Paragraph("It’s a place where you can grow your own UI 🤗"));
+    public VehiclesView(CrmService service, VehicleEditor editor) {
+        this.service = service;
+        this.editor = editor;
 
+        addClassName("vehicles-view");
         setSizeFull();
-        setJustifyContentMode(JustifyContentMode.CENTER);
-        setDefaultHorizontalComponentAlignment(Alignment.CENTER);
-        getStyle().set("text-align", "center");
+
+        grid = new Grid<>();
+        configureVehicleGrid();
+        grid.asSingleSelect().addValueChangeListener(e -> editor.editVehicle(e.getValue()));
+        updateVehicleList();
+
+        editor.setChangeHandler(() -> {
+            editor.setVisible(false);
+            updateVehicleList();
+        });
+
+        add(getToolbar(), grid, editor);
     }
 
+    private void configureVehicleGrid() {
+        grid.addClassNames("vehicle-grid");
+        grid.setSizeFull();
+
+        grid.addColumn(vehicle -> vehicle.getVehicleModel().getBrandName() + " " + vehicle.getVehicleModel().getModelName()).setHeader("Model");
+        grid.addColumn(Vehicle::getVin).setHeader("VIN");
+        grid.addColumn(Vehicle::getPriceUsd).setHeader("Price, USD");
+        grid.addColumn(Vehicle::getManufactureYear).setHeader("Year");
+        grid.addColumn(Vehicle::getKmDistanceTravelled).setHeader("Distance travelled, km");
+
+        grid.getColumns().forEach(col -> col.setAutoWidth(true));
+    }
+
+    private HorizontalLayout getToolbar() {
+        Button addContactButton = new Button("Add vehicle", VaadinIcon.PLUS.create());
+        addContactButton.addClickListener(e -> editor.editVehicle(new Vehicle()));
+
+        HorizontalLayout toolbar = new HorizontalLayout(addContactButton);
+        toolbar.addClassName("toolbar");
+        return toolbar;
+    }
+
+    private void updateVehicleList() {
+        grid.setItems(service.findAllVehicles());
+    }
 }
