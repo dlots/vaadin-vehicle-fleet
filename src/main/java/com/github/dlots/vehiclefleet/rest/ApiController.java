@@ -73,7 +73,7 @@ public class ApiController {
     @RolesAllowed(Manager.ROLE)
     Vehicle replaceVehicle(@RequestBody Vehicle newVehicle, @PathVariable Long id) {
         Optional<Vehicle> vehicle = crmService.findVehicleById(id);
-        if (vehicle.isPresent()) {
+        if (vehicle.isPresent() && isEnterpriseOwnedByManager(vehicle.get().getEnterprise().getId())) {
             vehicle.get().update(newVehicle);
             return crmService.saveVehicle(vehicle.get());
         }
