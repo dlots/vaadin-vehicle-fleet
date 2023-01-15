@@ -6,10 +6,21 @@ import javax.persistence.Enumerated;
 import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Positive;
-import java.util.Objects;
 
 @Entity
 public class VehicleModel extends AbstractEntity {
+    public VehicleModel() {
+    }
+
+    public VehicleModel(String brandName, String modelName, VehicleType vehicleType, int gasTankVolumeL, int payloadCapacityKg, int seatingCapacity) {
+        this.brandName = brandName;
+        this.modelName = modelName;
+        this.vehicleType = vehicleType;
+        this.gasTankVolumeL = gasTankVolumeL;
+        this.payloadCapacityKg = payloadCapacityKg;
+        this.seatingCapacity = seatingCapacity;
+    }
+
     @NotBlank
     private String brandName;
 
@@ -74,20 +85,6 @@ public class VehicleModel extends AbstractEntity {
 
     public void setSeatingCapacity(int seatingCapacity) {
         this.seatingCapacity = seatingCapacity;
-    }
-
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        if (!super.equals(o)) return false;
-        VehicleModel that = (VehicleModel) o;
-        return gasTankVolumeL == that.gasTankVolumeL && payloadCapacityKg == that.payloadCapacityKg && seatingCapacity == that.seatingCapacity && brandName.equals(that.brandName) && modelName.equals(that.modelName) && vehicleType == that.vehicleType;
-    }
-
-    @Override
-    public int hashCode() {
-        return Objects.hash(super.hashCode(), brandName, modelName, vehicleType, gasTankVolumeL, payloadCapacityKg, seatingCapacity);
     }
 
     @Override

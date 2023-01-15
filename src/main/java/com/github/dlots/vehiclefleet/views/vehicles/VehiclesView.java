@@ -1,7 +1,7 @@
 package com.github.dlots.vehiclefleet.views.vehicles;
 
 import com.github.dlots.vehiclefleet.data.entity.Vehicle;
-import com.github.dlots.vehiclefleet.data.service.CrmService;
+import com.github.dlots.vehiclefleet.service.CrmService;
 import com.github.dlots.vehiclefleet.views.MainLayout;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.grid.Grid;
@@ -10,9 +10,11 @@ import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
+import com.vaadin.flow.server.auth.AnonymousAllowed;
 
 @PageTitle("Vehicles | Vehicle fleet")
 @Route(value = "", layout = MainLayout.class)
+@AnonymousAllowed
 public class VehiclesView extends VerticalLayout {
     private final Grid<Vehicle> grid;
 
@@ -44,7 +46,8 @@ public class VehiclesView extends VerticalLayout {
         grid.addClassNames("vehicle-grid");
         grid.setSizeFull();
 
-        grid.addColumn(vehicle -> vehicle.getVehicleModel().getBrandName() + " " + vehicle.getVehicleModel().getModelName()).setHeader("Model");
+        grid.addColumn(vehicle -> vehicle.getVehicleModel().toString()).setHeader("Model");
+        grid.addColumn(vehicle -> vehicle.getEnterprise().getName()).setHeader("Owner");
         grid.addColumn(Vehicle::getVin).setHeader("VIN");
         grid.addColumn(Vehicle::getPriceUsd).setHeader("Price, USD");
         grid.addColumn(Vehicle::getManufactureYear).setHeader("Year");

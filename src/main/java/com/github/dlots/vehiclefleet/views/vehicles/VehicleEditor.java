@@ -2,7 +2,7 @@ package com.github.dlots.vehiclefleet.views.vehicles;
 
 import com.github.dlots.vehiclefleet.data.entity.Vehicle;
 import com.github.dlots.vehiclefleet.data.entity.VehicleModel;
-import com.github.dlots.vehiclefleet.data.service.CrmService;
+import com.github.dlots.vehiclefleet.service.CrmService;
 import com.vaadin.flow.component.KeyNotifier;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.html.Span;

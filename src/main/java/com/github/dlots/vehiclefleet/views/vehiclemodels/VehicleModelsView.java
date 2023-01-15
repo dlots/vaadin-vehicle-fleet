@@ -1,7 +1,7 @@
 package com.github.dlots.vehiclefleet.views.vehiclemodels;
 
 import com.github.dlots.vehiclefleet.data.entity.VehicleModel;
-import com.github.dlots.vehiclefleet.data.service.CrmService;
+import com.github.dlots.vehiclefleet.service.CrmService;
 import com.github.dlots.vehiclefleet.views.MainLayout;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.grid.Grid;
@@ -9,9 +9,11 @@ import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
+import com.vaadin.flow.server.auth.AnonymousAllowed;
 
 @PageTitle("Vehicle models | Vehicle fleet")
 @Route(value = "models", layout = MainLayout.class)
+@AnonymousAllowed
 public class VehicleModelsView extends VerticalLayout {
     Grid<VehicleModel> vehicleModelGrid = new Grid<>(VehicleModel.class, false);
 

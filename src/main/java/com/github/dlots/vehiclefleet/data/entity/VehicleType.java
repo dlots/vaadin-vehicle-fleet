@@ -1,7 +1,5 @@
 package com.github.dlots.vehiclefleet.data.entity;
 
-import org.hibernate.type.StringNVarcharType;
-
 public enum VehicleType {
     BUS("Bus"),
     CAR("Car"),
@@ -10,7 +8,7 @@ public enum VehicleType {
 
     private final String name;
 
-    private VehicleType(String name) {
+    VehicleType(String name) {
         this.name = name;
     }
 
