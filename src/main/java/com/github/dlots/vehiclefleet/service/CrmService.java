@@ -93,8 +93,8 @@ public class CrmService {
         return driverRepository.findAll();
     }
 
-    public void saveDriver(Driver driver) {
-        driverRepository.saveAndFlush(driver);
+    public Driver saveDriver(Driver driver) {
+        return driverRepository.saveAndFlush(driver);
     }
 
     public void saveDrivers(Driver... drivers) {

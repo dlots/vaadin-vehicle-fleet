@@ -169,5 +169,8 @@ public class Vehicle extends AbstractEntity {
         if (drivers != null) {
             drivers.forEach(driver -> driver.setVehicle(this));
         }
+        if (activeDriver != null) {
+            activeDriver.setVehicle(this);
+        }
     }
 }

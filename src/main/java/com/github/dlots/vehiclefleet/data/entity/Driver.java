@@ -4,6 +4,9 @@ import com.fasterxml.jackson.annotation.JsonIdentityInfo;
 import com.fasterxml.jackson.annotation.JsonIdentityReference;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.ObjectIdGenerators;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import com.github.dlots.vehiclefleet.util.json.EnterpriseDeserializer;
+import com.github.dlots.vehiclefleet.util.json.VehicleDeserializer;
 
 import javax.annotation.Nullable;
 import javax.persistence.Entity;
@@ -18,7 +21,7 @@ public class Driver extends AbstractEntity {
     public Driver() {
     }
 
-    public Driver(String name, int salaryUsd, Enterprise enterprise, Vehicle vehicle) {
+    public Driver(String name, int salaryUsd, Enterprise enterprise, @Nullable Vehicle vehicle) {
         this.name = name;
         this.salaryUsd = salaryUsd;
         this.enterprise = enterprise;
@@ -34,6 +37,7 @@ public class Driver extends AbstractEntity {
     @ManyToOne
     @JoinColumn(name = "enterprise_id")
     @NotNull
+    @JsonDeserialize(using = EnterpriseDeserializer.class)
     @JsonIdentityInfo(generator = ObjectIdGenerators.PropertyGenerator.class, property = "id")
     @JsonIdentityReference(alwaysAsId = true)
     @JsonProperty("enterpriseId")
@@ -42,6 +46,7 @@ public class Driver extends AbstractEntity {
     @ManyToOne
     @JoinColumn(name = "vehicle_id")
     @Nullable
+    @JsonDeserialize(using = VehicleDeserializer.class)
     @JsonIdentityInfo(generator = ObjectIdGenerators.PropertyGenerator.class, property = "id")
     @JsonIdentityReference(alwaysAsId = true)
     @JsonProperty("vehicleId")

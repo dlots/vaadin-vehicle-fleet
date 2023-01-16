@@ -1,9 +1,6 @@
 package com.github.dlots.vehiclefleet.rest;
 
-import com.github.dlots.vehiclefleet.data.entity.Driver;
-import com.github.dlots.vehiclefleet.data.entity.Enterprise;
-import com.github.dlots.vehiclefleet.data.entity.Manager;
-import com.github.dlots.vehiclefleet.data.entity.Vehicle;
+import com.github.dlots.vehiclefleet.data.entity.*;
 import com.github.dlots.vehiclefleet.service.CrmService;
 import com.github.dlots.vehiclefleet.service.ManagerService;
 import org.springframework.web.bind.annotation.*;
@@ -17,6 +14,7 @@ import java.util.stream.Stream;
 @RestController
 public class ApiController {
     public static final String API = "/api";
+    public static final String VEHICLE_MODELS = "/vehicle_models";
     public static final String ENTERPRISES = "/enterprises";
     public static final String DRIVERS = "/drivers";
     public static final String VEHICLES = "/vehicles";
@@ -28,6 +26,12 @@ public class ApiController {
     public ApiController(ManagerService managerService, CrmService crmService) {
         this.managerService = managerService;
         this.crmService = crmService;
+    }
+
+    @GetMapping(API + VEHICLE_MODELS)
+    @RolesAllowed(Manager.ROLE)
+    List<VehicleModel> getVehicleModels() {
+        return crmService.findAllVehicleModels();
     }
 
     @GetMapping(API + ENTERPRISES)
@@ -42,6 +46,15 @@ public class ApiController {
     @RolesAllowed(Manager.ROLE)
     List<Driver> getManagedEnterprisesDrivers() {
         return getManagedEnterprises().stream().flatMap(enterprise -> enterprise.getDrivers() != null ? enterprise.getDrivers().stream() : Stream.empty()).collect(Collectors.toList());
+    }
+
+    @PostMapping(API + DRIVERS)
+    @RolesAllowed(Manager.ROLE)
+    Driver createNewDriver(@RequestBody Driver newDriver) {
+        if (isEnterpriseOwnedByManager(newDriver.getEnterprise().getId())) {
+            return crmService.saveDriver(newDriver);
+        }
+        return null;
     }
 
     @GetMapping(API + VEHICLES)
