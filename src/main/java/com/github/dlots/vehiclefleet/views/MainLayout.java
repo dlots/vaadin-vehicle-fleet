@@ -1,6 +1,7 @@
 package com.github.dlots.vehiclefleet.views;
 
 import com.github.dlots.vehiclefleet.service.ManagerService;
+import com.github.dlots.vehiclefleet.views.enterprises.EnterprisesView;
 import com.github.dlots.vehiclefleet.views.vehiclemodels.VehicleModelsView;
 import com.github.dlots.vehiclefleet.views.vehicles.VehiclesView;
 import com.vaadin.flow.component.UI;
@@ -15,7 +16,7 @@ import com.vaadin.flow.router.HighlightConditions;
 import com.vaadin.flow.router.RouterLink;
 
 public class MainLayout extends AppLayout {
-    private ManagerService managerService;
+    private final ManagerService managerService;
 
     public MainLayout(ManagerService managerService) {
         this.managerService = managerService;
@@ -29,13 +30,16 @@ public class MainLayout extends AppLayout {
     }
 
     private VerticalLayout createLinks() {
+        RouterLink enterprisesLink = new RouterLink("Enterprises", EnterprisesView.class);
+        enterprisesLink.setHighlightCondition(HighlightConditions.sameLocation());
+
         RouterLink vehiclesLink = new RouterLink("Vehicles", VehiclesView.class);
         vehiclesLink.setHighlightCondition(HighlightConditions.sameLocation());
 
         RouterLink modelsLink = new RouterLink("Vehicle models", VehicleModelsView.class);
         modelsLink.setHighlightCondition(HighlightConditions.sameLocation());
 
-        return new VerticalLayout(vehiclesLink, modelsLink);
+        return new VerticalLayout(enterprisesLink, vehiclesLink, modelsLink);
     }
 
     private void addHeaderContent() {
@@ -48,14 +52,10 @@ public class MainLayout extends AppLayout {
         HorizontalLayout header = new HorizontalLayout(toggle, appName);
         Button loginLogout;
         if (managerService.getAuthenticatedManager() != null) {
-            loginLogout = new Button("Logout", buttonClickEvent -> {
-                managerService.logout();
-            });
+            loginLogout = new Button("Logout", buttonClickEvent -> managerService.logout());
 
         } else {
-            loginLogout = new Button("Login", buttonClickEvent -> {
-                UI.getCurrent().getPage().setLocation("/login");
-            });
+            loginLogout = new Button("Login", buttonClickEvent -> UI.getCurrent().getPage().setLocation("/login"));
             loginLogout.getElement().getStyle().set("margin-left", "auto");
             header.add(loginLogout);
         }

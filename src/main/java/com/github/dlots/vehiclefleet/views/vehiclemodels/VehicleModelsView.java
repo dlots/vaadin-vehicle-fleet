@@ -9,11 +9,12 @@ import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
-import com.vaadin.flow.server.auth.AnonymousAllowed;
+
+import javax.annotation.security.PermitAll;
 
 @PageTitle("Vehicle models | Vehicle fleet")
 @Route(value = "models", layout = MainLayout.class)
-@AnonymousAllowed
+@PermitAll
 public class VehicleModelsView extends VerticalLayout {
     Grid<VehicleModel> vehicleModelGrid = new Grid<>(VehicleModel.class, false);
 

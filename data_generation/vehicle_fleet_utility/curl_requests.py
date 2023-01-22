@@ -6,7 +6,7 @@ import json
 class CurlHandler:
     def __init__(self):
         self.__curl = pycurl.Curl()
-        self.__application_url = '172.22.96.1:8080'
+        self.__application_url = '172.21.224.1:8080'
         self.username = 'admin'
         self.password = 'password'
         self.__curl.setopt(pycurl.USERPWD, '{}:{}'.format(self.username, self.password))

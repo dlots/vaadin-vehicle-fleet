@@ -2,6 +2,7 @@ import datetime
 import random
 import string
 import names
+import tqdm
 
 import curl_requests
 
@@ -41,7 +42,7 @@ def generate_vehicle(models, enterprise_id, curl_handler):
 def generate_vehicles(enterprise_ids, num_vehicles):
     curl_handler = curl_requests.CurlHandler()
     models = curl_handler.get_vehicle_model_ids()
-    for enterprise_id in enterprise_ids:
-        for _ in range(num_vehicles):
+    for enterprise_id in tqdm.tqdm(enterprise_ids):
+        for _ in tqdm.tqdm(range(num_vehicles)):
             vehicle = generate_vehicle(models, enterprise_id, curl_handler)
             curl_handler.post_new_vehicle(vehicle)

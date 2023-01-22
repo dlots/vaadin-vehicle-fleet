@@ -1,5 +1,6 @@
 package com.github.dlots.vehiclefleet.service;
 
+import com.github.dlots.vehiclefleet.data.entity.Enterprise;
 import com.github.dlots.vehiclefleet.data.entity.Manager;
 import com.github.dlots.vehiclefleet.data.repository.ManagerRepository;
 import com.vaadin.flow.component.UI;
@@ -12,6 +13,8 @@ import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.web.authentication.logout.SecurityContextLogoutHandler;
 import org.springframework.stereotype.Component;
 
+import java.util.List;
+
 @Component
 public class ManagerService implements UserDetailsService {
     private static final String LOGOUT_SUCCESS_URL = "/";
@@ -23,7 +26,7 @@ public class ManagerService implements UserDetailsService {
     }
 
     @Override
-    public UserDetails loadUserByUsername(String username) {
+    public Manager loadUserByUsername(String username) {
         Manager manager = managerRepository.findByUsername(username);
         if (manager == null) {
             throw new UsernameNotFoundException(username);
@@ -39,6 +42,10 @@ public class ManagerService implements UserDetailsService {
         }
         // Anonymous or no authentication.
         return null;
+    }
+
+    public List<Enterprise> getManagedEnterprises() {
+        return loadUserByUsername(getAuthenticatedManager().getUsername()).getEnterprises();
     }
 
     public void logout() {

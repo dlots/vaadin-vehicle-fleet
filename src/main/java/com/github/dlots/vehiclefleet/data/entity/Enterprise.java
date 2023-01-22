@@ -41,7 +41,7 @@ public class Enterprise extends AbstractEntity {
     @JsonProperty("vehiclesIds")
     private List<Vehicle> vehicles = new LinkedList<>();
 
-    @ManyToMany(mappedBy = "enterprises")
+    @ManyToMany
     @Nullable
     @JsonIdentityInfo(generator = ObjectIdGenerators.PropertyGenerator.class, property = "id")
     @JsonIdentityReference(alwaysAsId = true)
@@ -81,5 +81,10 @@ public class Enterprise extends AbstractEntity {
 
     public void setManagers(@Nullable List<Manager> managers) {
         this.managers = managers;
+    }
+
+    @Override
+    public String toString() {
+        return name;
     }
 }

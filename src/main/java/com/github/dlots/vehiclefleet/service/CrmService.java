@@ -1,17 +1,16 @@
 package com.github.dlots.vehiclefleet.service;
 
-import com.github.dlots.vehiclefleet.data.entity.Driver;
-import com.github.dlots.vehiclefleet.data.entity.Enterprise;
-import com.github.dlots.vehiclefleet.data.entity.Vehicle;
-import com.github.dlots.vehiclefleet.data.entity.VehicleModel;
+import com.github.dlots.vehiclefleet.data.entity.*;
 import com.github.dlots.vehiclefleet.data.repository.DriverRepository;
 import com.github.dlots.vehiclefleet.data.repository.EnterpriseRepository;
 import com.github.dlots.vehiclefleet.data.repository.VehicleModelRepository;
 import com.github.dlots.vehiclefleet.data.repository.VehicleRepository;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Service
 public class CrmService {
@@ -19,14 +18,16 @@ public class CrmService {
     private final VehicleModelRepository vehicleModelRepository;
     private final EnterpriseRepository enterpriseRepository;
     private final DriverRepository driverRepository;
+    private final ManagerService managerService;
 
     public CrmService(VehicleRepository vehicleRepository, VehicleModelRepository vehicleModelRepository,
-                      EnterpriseRepository enterpriseRepository,
-                      DriverRepository driverRepository) {
+                      EnterpriseRepository enterpriseRepository, DriverRepository driverRepository,
+                      ManagerService managerService) {
         this.vehicleRepository = vehicleRepository;
         this.vehicleModelRepository = vehicleModelRepository;
         this.enterpriseRepository = enterpriseRepository;
         this.driverRepository = driverRepository;
+        this.managerService = managerService;
     }
 
     public Optional<Vehicle> findVehicleById(Long id) {
@@ -35,6 +36,21 @@ public class CrmService {
 
     public List<Vehicle> findAllVehicles() {
         return vehicleRepository.findAll();
+    }
+
+    public List<Vehicle> findAllVehiclesForEnterprises(List<Enterprise> enterprises) {
+        return vehicleRepository.findAllByEnterpriseIds(enterprises.stream().map(AbstractEntity::getId).collect(Collectors.toList()));
+    }
+
+    public List<Vehicle> findAllVehiclesForManagedEnterprises() {
+        return findAllVehiclesForEnterprises(managerService.getManagedEnterprises());
+    }
+
+    public List<Vehicle> findAllVehiclesForEnterprisesByPage(List<Enterprise> enterprises, int page, int size) {
+        return vehicleRepository.findPageByEnterpriseIds(
+                        enterprises.stream().map(AbstractEntity::getId).collect(Collectors.toList()),
+                        PageRequest.of(page, size))
+                .getContent();
     }
 
     public Vehicle saveVehicle(Vehicle vehicle) {

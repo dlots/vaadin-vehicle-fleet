@@ -37,9 +37,7 @@ public class ApiController {
     @GetMapping(API + ENTERPRISES)
     @RolesAllowed(Manager.ROLE)
     List<Enterprise> getManagedEnterprises() {
-        Manager manager = (Manager) managerService.getAuthenticatedManager();
-        manager = (Manager) managerService.loadUserByUsername(manager.getUsername());
-        return manager.getEnterprises();
+        return managerService.getManagedEnterprises();
     }
 
     @GetMapping(API + DRIVERS)
@@ -59,8 +57,12 @@ public class ApiController {
 
     @GetMapping(API + VEHICLES)
     @RolesAllowed(Manager.ROLE)
-    List<Vehicle> getManagedEnterprisesVehicles() {
-        return getManagedEnterprises().stream().flatMap(enterprise -> enterprise.getVehicles() != null ? enterprise.getVehicles().stream() : Stream.empty()).collect(Collectors.toList());
+    List<Vehicle> getManagedEnterprisesVehicles(@RequestParam(required = false) Integer page, @RequestParam(required = false) Integer size) {
+        List<Enterprise> enterprises = getManagedEnterprises();
+        if (page == null || size == null) {
+            return crmService.findAllVehiclesForEnterprises(enterprises);
+        }
+        return crmService.findAllVehiclesForEnterprisesByPage(enterprises, page, size);
     }
 
     @GetMapping(API + VEHICLES + ID)
