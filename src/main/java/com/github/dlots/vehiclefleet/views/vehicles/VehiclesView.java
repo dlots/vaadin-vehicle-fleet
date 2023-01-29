@@ -6,6 +6,7 @@ import com.github.dlots.vehiclefleet.service.CrmService;
 import com.github.dlots.vehiclefleet.service.ManagerService;
 import com.github.dlots.vehiclefleet.util.DateTimeUtil;
 import com.github.dlots.vehiclefleet.views.MainLayout;
+import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.grid.Grid;
 import com.vaadin.flow.component.grid.dataview.GridListDataView;
@@ -18,6 +19,8 @@ import com.vaadin.flow.router.Route;
 
 import javax.annotation.security.PermitAll;
 import java.util.List;
+import java.util.TimeZone;
+import java.util.concurrent.atomic.AtomicReference;
 
 @PageTitle("Vehicles | Vehicle fleet")
 @Route(value = "vehicles", layout = MainLayout.class)
@@ -66,8 +69,18 @@ public class VehiclesView extends VerticalLayout {
         grid.addColumn(Vehicle::getPriceUsd).setHeader("Price, USD");
         grid.addColumn(Vehicle::getManufactureYear).setHeader("Year");
         grid.addColumn(Vehicle::getDistanceTravelledKm).setHeader("Distance travelled, km");
-        grid.addColumn(v -> DateTimeUtil.formatDateToString(v.getPurchaseDateTimeUtc(), null)).setHeader("Date and time of purchase");
-
+        Grid.Column<Vehicle> column = grid.addColumn(v -> DateTimeUtil.formatInstantToString(
+                        v.getPurchaseDateTimeUtc(),
+                        v.getEnterprise().getTimeZone()))
+                .setHeader("Purchased (enterprise TZ)");
+        UI.getCurrent().getPage().retrieveExtendedClientDetails(extendedClientDetails -> {
+            grid.removeColumn(column);
+            grid.addColumn(v -> DateTimeUtil.formatInstantToString(
+                            v.getPurchaseDateTimeUtc(),
+                            TimeZone.getTimeZone(extendedClientDetails.getTimeZoneId())))
+                    .setHeader("Purchased (your TZ)");
+            grid.getColumns().forEach(col -> col.setAutoWidth(true));
+        });
         grid.getColumns().forEach(col -> col.setAutoWidth(true));
     }
 
