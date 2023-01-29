@@ -4,6 +4,7 @@ import com.github.dlots.vehiclefleet.data.entity.Enterprise;
 import com.github.dlots.vehiclefleet.data.entity.Vehicle;
 import com.github.dlots.vehiclefleet.service.CrmService;
 import com.github.dlots.vehiclefleet.service.ManagerService;
+import com.github.dlots.vehiclefleet.util.DateTimeUtil;
 import com.github.dlots.vehiclefleet.views.MainLayout;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.grid.Grid;
@@ -61,11 +62,11 @@ public class VehiclesView extends VerticalLayout {
         grid.setSizeFull();
 
         grid.addColumn(vehicle -> vehicle.getVehicleModel().toString()).setHeader("Model");
-        //grid.addColumn(vehicle -> vehicle.getEnterprise().getName()).setHeader("Owner");
         grid.addColumn(Vehicle::getVin).setHeader("VIN");
         grid.addColumn(Vehicle::getPriceUsd).setHeader("Price, USD");
         grid.addColumn(Vehicle::getManufactureYear).setHeader("Year");
-        grid.addColumn(Vehicle::getKmDistanceTravelled).setHeader("Distance travelled, km");
+        grid.addColumn(Vehicle::getDistanceTravelledKm).setHeader("Distance travelled, km");
+        grid.addColumn(v -> DateTimeUtil.formatDateToString(v.getPurchaseDateTimeUtc(), null)).setHeader("Date and time of purchase");
 
         grid.getColumns().forEach(col -> col.setAutoWidth(true));
     }

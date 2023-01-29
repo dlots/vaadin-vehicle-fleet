@@ -1,9 +1,6 @@
 package com.github.dlots.vehiclefleet.data.entity;
 
-import com.fasterxml.jackson.annotation.JsonIdentityInfo;
-import com.fasterxml.jackson.annotation.JsonIdentityReference;
-import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.annotation.ObjectIdGenerators;
+import com.fasterxml.jackson.annotation.*;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.github.dlots.vehiclefleet.util.json.DriverDeserializer;
 import com.github.dlots.vehiclefleet.util.json.EnterpriseDeserializer;
@@ -12,15 +9,24 @@ import com.github.dlots.vehiclefleet.util.json.VehicleModelDeserializer;
 import javax.annotation.Nullable;
 import javax.persistence.*;
 import javax.validation.constraints.*;
+import java.time.Instant;
+import java.time.ZonedDateTime;
+import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
+
+;
 
 @Entity
 public class Vehicle extends AbstractEntity {
     public Vehicle() {
+        this.purchaseDateTimeEnterpriseLocal = null;
+        this.gpsTrack = new ArrayList<>();
     }
 
-    public Vehicle(VehicleModel model, Enterprise enterprise, @Nullable List<Driver> drivers, @Nullable Driver activeDriver, String vin, int priceUsd, int manufactureYear, int kmDistanceTravelled) {
+    public Vehicle(VehicleModel model, Enterprise enterprise, @Nullable List<Driver> drivers, @Nullable Driver activeDriver,
+                   String vin, int priceUsd, int manufactureYear, int distanceTravelledKm, @Nullable Instant purchaseDateTimeUtc) {
+        this();
         this.vehicleModel = model;
         this.enterprise = enterprise;
         this.drivers = drivers;
@@ -28,7 +34,15 @@ public class Vehicle extends AbstractEntity {
         this.vin = vin;
         this.priceUsd = priceUsd;
         this.manufactureYear = manufactureYear;
-        this.kmDistanceTravelled = kmDistanceTravelled;
+        this.distanceTravelledKm = distanceTravelledKm;
+        this.purchaseDateTimeUtc = purchaseDateTimeUtc;
+    }
+
+    public Vehicle(VehicleModel model, Enterprise enterprise, @Nullable List<Driver> drivers, @Nullable Driver activeDriver,
+                   String vin, int priceUsd, int manufactureYear, int distanceTravelledKm, @Nullable Instant purchaseDateTimeUtc,
+                   List<GpsPoint> gpsTrack) {
+        this(model, enterprise, drivers, activeDriver, vin, priceUsd, manufactureYear, distanceTravelledKm, purchaseDateTimeUtc);
+        this.gpsTrack = gpsTrack;
     }
 
     @NotNull
@@ -66,6 +80,9 @@ public class Vehicle extends AbstractEntity {
     @JsonProperty("activeDriverId")
     private Driver activeDriver;
 
+    @OneToMany(mappedBy = "vehicle", cascade = CascadeType.ALL)
+    private List<GpsPoint> gpsTrack;
+
     @NotBlank
     @Size(min = 17, max = 17)
     private String vin;
@@ -77,11 +94,19 @@ public class Vehicle extends AbstractEntity {
     private int manufactureYear;
 
     @PositiveOrZero
-    private int kmDistanceTravelled;
+    private int distanceTravelledKm;
 
     public VehicleModel getVehicleModel() {
         return vehicleModel;
     }
+
+    @Nullable
+    @JsonIgnore
+    private Instant purchaseDateTimeUtc;
+
+    @Nullable
+    @Transient
+    private ZonedDateTime purchaseDateTimeEnterpriseLocal;
 
     public void setVehicleModel(VehicleModel vehicleModel) {
         this.vehicleModel = vehicleModel;
@@ -137,12 +162,41 @@ public class Vehicle extends AbstractEntity {
         this.manufactureYear = manufactureYear;
     }
 
-    public int getKmDistanceTravelled() {
-        return kmDistanceTravelled;
+    public int getDistanceTravelledKm() {
+        return distanceTravelledKm;
     }
 
-    public void setKmDistanceTravelled(int kmMileage) {
-        this.kmDistanceTravelled = kmMileage;
+    public void setDistanceTravelledKm(int kmMileage) {
+        this.distanceTravelledKm = kmMileage;
+    }
+
+    @Nullable
+    public Instant getPurchaseDateTimeUtc() {
+        return purchaseDateTimeUtc;
+    }
+
+    public void setPurchaseDateTimeUtc(@Nullable Instant purchaseDateTimeUtc) {
+        this.purchaseDateTimeUtc = purchaseDateTimeUtc;
+    }
+
+    @Nullable
+    public ZonedDateTime getPurchaseDateTimeEnterpriseLocal() {
+        return purchaseDateTimeEnterpriseLocal;
+    }
+
+    public void resolvePurchaseDateTimeEnterpriseLocal() {
+        if (purchaseDateTimeUtc == null) {
+            return;
+        }
+        this.purchaseDateTimeEnterpriseLocal = purchaseDateTimeUtc.atZone(enterprise.getTimeZone().toZoneId());
+    }
+
+    public List<GpsPoint> getGpsTrack() {
+        return gpsTrack;
+    }
+
+    public void setGpsTrack(List<GpsPoint> gpsTrack) {
+        this.gpsTrack = gpsTrack;
     }
 
     public void update(Vehicle other) {
@@ -151,9 +205,11 @@ public class Vehicle extends AbstractEntity {
         setEnterprise(other.getEnterprise());
         setVin(other.getVin());
         setVehicleModel(other.getVehicleModel());
-        setKmDistanceTravelled(other.getKmDistanceTravelled());
+        setDistanceTravelledKm(other.getDistanceTravelledKm());
         setPriceUsd(other.getPriceUsd());
         setManufactureYear(other.getManufactureYear());
+        setPurchaseDateTimeUtc(other.getPurchaseDateTimeUtc());
+        setGpsTrack(other.getGpsTrack());
     }
 
     @PreRemove
@@ -165,12 +221,13 @@ public class Vehicle extends AbstractEntity {
 
     @PrePersist
     @PreUpdate
-    private void updateDrivers() {
+    private void updateRelations() {
         if (drivers != null) {
             drivers.forEach(driver -> driver.setVehicle(this));
         }
         if (activeDriver != null) {
             activeDriver.setVehicle(this);
         }
+        gpsTrack.forEach(gpsPoint -> gpsPoint.setVehicle(this));
     }
 }

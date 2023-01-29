@@ -3,9 +3,11 @@ package com.github.dlots.vehiclefleet.rest;
 import com.github.dlots.vehiclefleet.data.entity.*;
 import com.github.dlots.vehiclefleet.service.CrmService;
 import com.github.dlots.vehiclefleet.service.ManagerService;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.web.bind.annotation.*;
 
 import javax.annotation.security.RolesAllowed;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -18,6 +20,7 @@ public class ApiController {
     public static final String ENTERPRISES = "/enterprises";
     public static final String DRIVERS = "/drivers";
     public static final String VEHICLES = "/vehicles";
+    public static final String GPS = "/gps";
     public static final String ID = "/{id}";
 
     private final ManagerService managerService;
@@ -30,25 +33,25 @@ public class ApiController {
 
     @GetMapping(API + VEHICLE_MODELS)
     @RolesAllowed(Manager.ROLE)
-    List<VehicleModel> getVehicleModels() {
+    public List<VehicleModel> getVehicleModels() {
         return crmService.findAllVehicleModels();
     }
 
     @GetMapping(API + ENTERPRISES)
     @RolesAllowed(Manager.ROLE)
-    List<Enterprise> getManagedEnterprises() {
+    public List<Enterprise> getManagedEnterprises() {
         return managerService.getManagedEnterprises();
     }
 
     @GetMapping(API + DRIVERS)
     @RolesAllowed(Manager.ROLE)
-    List<Driver> getManagedEnterprisesDrivers() {
+    public List<Driver> getManagedEnterprisesDrivers() {
         return getManagedEnterprises().stream().flatMap(enterprise -> enterprise.getDrivers() != null ? enterprise.getDrivers().stream() : Stream.empty()).collect(Collectors.toList());
     }
 
     @PostMapping(API + DRIVERS)
     @RolesAllowed(Manager.ROLE)
-    Driver createNewDriver(@RequestBody Driver newDriver) {
+    public Driver createNewDriver(@RequestBody Driver newDriver) {
         if (isEnterpriseOwnedByManager(newDriver.getEnterprise().getId())) {
             return crmService.saveDriver(newDriver);
         }
@@ -57,27 +60,33 @@ public class ApiController {
 
     @GetMapping(API + VEHICLES)
     @RolesAllowed(Manager.ROLE)
-    List<Vehicle> getManagedEnterprisesVehicles(@RequestParam(required = false) Integer page, @RequestParam(required = false) Integer size) {
+    public List<Vehicle> getManagedEnterprisesVehicles(@RequestParam(required = false) Integer page, @RequestParam(required = false) Integer size) {
+        final List<Vehicle> result;
         List<Enterprise> enterprises = getManagedEnterprises();
         if (page == null || size == null) {
-            return crmService.findAllVehiclesForEnterprises(enterprises);
+            result = crmService.findAllVehiclesForEnterprises(enterprises);
+        } else {
+            result = crmService.findAllVehiclesForEnterprisesByPage(enterprises, page, size);
         }
-        return crmService.findAllVehiclesForEnterprisesByPage(enterprises, page, size);
+        result.forEach(Vehicle::resolvePurchaseDateTimeEnterpriseLocal);
+        return result;
     }
 
     @GetMapping(API + VEHICLES + ID)
     @RolesAllowed(Manager.ROLE)
-    Vehicle getVehicleByIdFromManagedEnterprises(@PathVariable Long id) {
+    public Vehicle getVehicleByIdFromManagedEnterprises(@PathVariable Long id) {
         Optional<Vehicle> vehicle = crmService.findVehicleById(id);
         if (vehicle.isPresent() && isEnterpriseOwnedByManager(vehicle.get().getEnterprise().getId())) {
-            return vehicle.get();
+            Vehicle v = vehicle.get();
+            v.resolvePurchaseDateTimeEnterpriseLocal();
+            return v;
         }
         return null;
     }
 
     @PostMapping(API + VEHICLES)
     @RolesAllowed(Manager.ROLE)
-    Vehicle createNewVehicle(@RequestBody Vehicle newVehicle) {
+    public Vehicle createNewVehicle(@RequestBody Vehicle newVehicle) {
         if (isEnterpriseOwnedByManager(newVehicle.getEnterprise().getId())) {
             return crmService.saveVehicle(newVehicle);
         }
@@ -86,7 +95,7 @@ public class ApiController {
 
     @PutMapping(API + VEHICLES + ID)
     @RolesAllowed(Manager.ROLE)
-    Vehicle replaceVehicle(@RequestBody Vehicle newVehicle, @PathVariable Long id) {
+    public Vehicle replaceVehicle(@RequestBody Vehicle newVehicle, @PathVariable Long id) {
         Optional<Vehicle> vehicle = crmService.findVehicleById(id);
         if (vehicle.isPresent() && isEnterpriseOwnedByManager(vehicle.get().getEnterprise().getId())) {
             vehicle.get().update(newVehicle);
@@ -98,11 +107,20 @@ public class ApiController {
 
     @DeleteMapping(API + VEHICLES + ID)
     @RolesAllowed(Manager.ROLE)
-    void deleteVehicle(@PathVariable Long id) {
+    public void deleteVehicle(@PathVariable Long id) {
         Optional<Vehicle> vehicle = crmService.findVehicleById(id);
         if (vehicle.isPresent() && isEnterpriseOwnedByManager(vehicle.get().getEnterprise().getId())) {
             crmService.deleteVehicleById(id);
         }
+    }
+
+    @GetMapping(API + GPS + ID)
+    @RolesAllowed(Manager.ROLE)
+    public List<GpsPoint> getGpsTrackByVehicleIdAndDateRange(
+            @PathVariable Long id,
+            @RequestParam("start") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime start,
+            @RequestParam("end") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime end) {
+        return crmService.findGpsPointsForVehicleInDateRange(id, start, end);
     }
 
     private boolean isEnterpriseOwnedByManager(Long enterpriseId) {

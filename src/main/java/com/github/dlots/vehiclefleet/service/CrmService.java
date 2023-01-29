@@ -1,13 +1,13 @@
 package com.github.dlots.vehiclefleet.service;
 
 import com.github.dlots.vehiclefleet.data.entity.*;
-import com.github.dlots.vehiclefleet.data.repository.DriverRepository;
-import com.github.dlots.vehiclefleet.data.repository.EnterpriseRepository;
-import com.github.dlots.vehiclefleet.data.repository.VehicleModelRepository;
-import com.github.dlots.vehiclefleet.data.repository.VehicleRepository;
+import com.github.dlots.vehiclefleet.data.repository.*;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -18,24 +18,22 @@ public class CrmService {
     private final VehicleModelRepository vehicleModelRepository;
     private final EnterpriseRepository enterpriseRepository;
     private final DriverRepository driverRepository;
+    private final GpsPointRepository gpsPointRepository;
     private final ManagerService managerService;
 
     public CrmService(VehicleRepository vehicleRepository, VehicleModelRepository vehicleModelRepository,
                       EnterpriseRepository enterpriseRepository, DriverRepository driverRepository,
-                      ManagerService managerService) {
+                      GpsPointRepository gpsPointRepository, ManagerService managerService) {
         this.vehicleRepository = vehicleRepository;
         this.vehicleModelRepository = vehicleModelRepository;
         this.enterpriseRepository = enterpriseRepository;
         this.driverRepository = driverRepository;
+        this.gpsPointRepository = gpsPointRepository;
         this.managerService = managerService;
     }
 
     public Optional<Vehicle> findVehicleById(Long id) {
         return vehicleRepository.findById(id);
-    }
-
-    public List<Vehicle> findAllVehicles() {
-        return vehicleRepository.findAll();
     }
 
     public List<Vehicle> findAllVehiclesForEnterprises(List<Enterprise> enterprises) {
@@ -55,10 +53,6 @@ public class CrmService {
 
     public Vehicle saveVehicle(Vehicle vehicle) {
         return vehicleRepository.saveAndFlush(vehicle);
-    }
-
-    public void saveVehicles(Vehicle... vehicles) {
-        vehicleRepository.saveAllAndFlush(List.of(vehicles));
     }
 
     public void deleteVehicle(Vehicle vehicle) {
@@ -81,20 +75,8 @@ public class CrmService {
         vehicleModelRepository.saveAndFlush(model);
     }
 
-    public void saveVehicleModels(VehicleModel... vehicleModels) {
-        vehicleModelRepository.saveAllAndFlush(List.of(vehicleModels));
-    }
-
     public Optional<Enterprise> findEnterpriseById(Long id) {
         return enterpriseRepository.findById(id);
-    }
-
-    public List<Enterprise> findAllEnterprises() {
-        return enterpriseRepository.findAll();
-    }
-
-    public void saveEnterprise(Enterprise enterprise) {
-        enterpriseRepository.saveAndFlush(enterprise);
     }
 
     public void saveEnterprises(Enterprise... enterprises) {
@@ -105,10 +87,6 @@ public class CrmService {
         return driverRepository.findById(id);
     }
 
-    public List<Driver> findAllDrivers() {
-        return driverRepository.findAll();
-    }
-
     public Driver saveDriver(Driver driver) {
         return driverRepository.saveAndFlush(driver);
     }
@@ -116,4 +94,11 @@ public class CrmService {
     public void saveDrivers(Driver... drivers) {
         driverRepository.saveAllAndFlush(List.of(drivers));
     }
+
+    public List<GpsPoint> findGpsPointsForVehicleInDateRange(Long vehicleId, LocalDateTime start, LocalDateTime end) {
+        ZoneId zoneId = enterpriseRepository.findTimeZoneByVehicleId(vehicleId).toZoneId();
+        return gpsPointRepository.findByVehicleIdAndTimestampBetween(
+                vehicleId, ZonedDateTime.of(start, zoneId).toInstant(), ZonedDateTime.of(end, zoneId).toInstant());
+    }
+
 }

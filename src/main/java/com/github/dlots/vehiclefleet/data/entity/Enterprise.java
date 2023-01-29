@@ -12,20 +12,24 @@ import javax.persistence.OneToMany;
 import javax.validation.constraints.NotBlank;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.TimeZone;
 
 @Entity
 public class Enterprise extends AbstractEntity {
     public Enterprise() {
     }
 
-    public Enterprise(String name, @Nullable List<Driver> drivers, @Nullable List<Vehicle> vehicles) {
+    public Enterprise(String name, TimeZone timeZone, @Nullable List<Driver> drivers, @Nullable List<Vehicle> vehicles) {
         this.name = name;
+        this.timeZone = timeZone == null ? TimeZone.getTimeZone("UTC") : timeZone;
         this.drivers = drivers;
         this.vehicles = vehicles;
     }
 
     @NotBlank
     private String name;
+
+    private TimeZone timeZone;
 
     @OneToMany(mappedBy = "enterprise")
     @Nullable
@@ -54,6 +58,14 @@ public class Enterprise extends AbstractEntity {
 
     public void setName(String name) {
         this.name = name;
+    }
+
+    public TimeZone getTimeZone() {
+        return timeZone;
+    }
+
+    public void setTimeZone(TimeZone timeZone) {
+        this.timeZone = timeZone == null ? TimeZone.getTimeZone("UTC") : timeZone;
     }
 
     @Nullable
