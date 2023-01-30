@@ -20,7 +20,6 @@ import java.util.List;
 @Entity
 public class Vehicle extends AbstractEntity {
     public Vehicle() {
-        this.purchaseDateTimeEnterpriseLocal = null;
         this.gpsTrack = new ArrayList<>();
     }
 
@@ -36,13 +35,15 @@ public class Vehicle extends AbstractEntity {
         this.manufactureYear = manufactureYear;
         this.distanceTravelledKm = distanceTravelledKm;
         this.purchaseDateTimeUtc = purchaseDateTimeUtc;
+
     }
 
     public Vehicle(VehicleModel model, Enterprise enterprise, @Nullable List<Driver> drivers, @Nullable Driver activeDriver,
                    String vin, int priceUsd, int manufactureYear, int distanceTravelledKm, @Nullable Instant purchaseDateTimeUtc,
-                   List<GpsPoint> gpsTrack) {
+                   List<GpsPoint> gpsTrack, @Nullable List<Ride> rides) {
         this(model, enterprise, drivers, activeDriver, vin, priceUsd, manufactureYear, distanceTravelledKm, purchaseDateTimeUtc);
         this.gpsTrack = gpsTrack;
+        this.rides = rides;
     }
 
     @NotNull
@@ -82,6 +83,11 @@ public class Vehicle extends AbstractEntity {
 
     @OneToMany(mappedBy = "vehicle", cascade = CascadeType.ALL)
     private List<GpsPoint> gpsTrack;
+
+    @Nullable
+    @OneToMany(mappedBy = "vehicle", cascade = CascadeType.ALL)
+    @JsonIgnore
+    private List<Ride> rides;
 
     @NotBlank
     @Size(min = 17, max = 17)
@@ -199,6 +205,15 @@ public class Vehicle extends AbstractEntity {
         this.gpsTrack = gpsTrack;
     }
 
+    @Nullable
+    public List<Ride> getRides() {
+        return rides;
+    }
+
+    public void setRides(@Nullable List<Ride> rides) {
+        this.rides = rides;
+    }
+
     public void update(Vehicle other) {
         setDrivers(other.getDrivers());
         setActiveDriver(other.getActiveDriver());
@@ -227,6 +242,9 @@ public class Vehicle extends AbstractEntity {
         }
         if (activeDriver != null) {
             activeDriver.setVehicle(this);
+        }
+        if (rides != null) {
+            rides.forEach(ride -> ride.setVehicle(this));
         }
         gpsTrack.forEach(gpsPoint -> gpsPoint.setVehicle(this));
     }

@@ -5,9 +5,11 @@ import com.github.dlots.vehiclefleet.data.repository.*;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 
+import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -19,16 +21,19 @@ public class CrmService {
     private final EnterpriseRepository enterpriseRepository;
     private final DriverRepository driverRepository;
     private final GpsPointRepository gpsPointRepository;
+    private final RideRepository rideRepository;
     private final ManagerService managerService;
 
     public CrmService(VehicleRepository vehicleRepository, VehicleModelRepository vehicleModelRepository,
                       EnterpriseRepository enterpriseRepository, DriverRepository driverRepository,
-                      GpsPointRepository gpsPointRepository, ManagerService managerService) {
+                      GpsPointRepository gpsPointRepository, RideRepository rideRepository,
+                      ManagerService managerService) {
         this.vehicleRepository = vehicleRepository;
         this.vehicleModelRepository = vehicleModelRepository;
         this.enterpriseRepository = enterpriseRepository;
         this.driverRepository = driverRepository;
         this.gpsPointRepository = gpsPointRepository;
+        this.rideRepository = rideRepository;
         this.managerService = managerService;
     }
 
@@ -101,4 +106,16 @@ public class CrmService {
                 vehicleId, ZonedDateTime.of(start, zoneId).toInstant(), ZonedDateTime.of(end, zoneId).toInstant());
     }
 
+    public List<GpsPoint> findRidesByVehicleIdInDateRange(Long vehicleId, LocalDateTime start, LocalDateTime end) {
+        ZoneId zoneId = enterpriseRepository.findTimeZoneByVehicleId(vehicleId).toZoneId();
+        Instant startInstant = ZonedDateTime.of(start, zoneId).toInstant();
+        Instant endInstant = ZonedDateTime.of(end, zoneId).toInstant();
+        Ride lowerBound = rideRepository.findByStartTimeAfter(startInstant);
+        Ride upperBound = rideRepository.findByEndTimeBefore(endInstant);
+        if (lowerBound == null || upperBound == null) {
+            return Collections.emptyList();
+        }
+        return gpsPointRepository.findByVehicleIdAndTimestampBetween(
+                vehicleId, lowerBound.getStartTime(), upperBound.getEndTime());
+    }
 }

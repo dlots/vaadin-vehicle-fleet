@@ -21,6 +21,7 @@ public class ApiController {
     public static final String DRIVERS = "/drivers";
     public static final String VEHICLES = "/vehicles";
     public static final String GPS = "/gps";
+    public static final String RIDES = "/rides";
     public static final String ID = "/{id}";
 
     private final ManagerService managerService;
@@ -121,6 +122,15 @@ public class ApiController {
             @RequestParam("start") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime start,
             @RequestParam("end") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime end) {
         return crmService.findGpsPointsForVehicleInDateRange(id, start, end);
+    }
+
+    @GetMapping(API + RIDES + ID)
+    @RolesAllowed(Manager.ROLE)
+    public List<GpsPoint> getRidesByVehicleIdAndDateRange(
+            @PathVariable Long id,
+            @RequestParam("start") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime start,
+            @RequestParam("end") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime end) {
+        return crmService.findRidesByVehicleIdInDateRange(id, start, end);
     }
 
     private boolean isEnterpriseOwnedByManager(Long enterpriseId) {

@@ -42,12 +42,15 @@ public class LoadDatabase {
             Driver driver6 = new Driver("Driver6", 1257, enterprise3, null);
             crmService.saveDrivers(driver1, driver2, unemployed, driver3, driver4, driver5, driver6);
 
-            Instant second = Instant.now();
-            Instant first = second.minus(1, ChronoUnit.MINUTES);
-            List<GpsPoint> gpsTrack = List.of(GpsPoint.of(1, 2, first), GpsPoint.of(3, 4, second));
-            //crmService.savePoints(gpsTrack);
+            Instant fourth = Instant.now();
+            Instant third = fourth.minus(1, ChronoUnit.MINUTES);
+            Instant second = fourth.minus(2, ChronoUnit.MINUTES);
+            Instant first = fourth.minus(3, ChronoUnit.MINUTES);
+            List<GpsPoint> gpsTrack = List.of(GpsPoint.of(1, 2, first), GpsPoint.of(3, 4, second), GpsPoint.of(3, 4, third), GpsPoint.of(3, 4, fourth));
 
-            Vehicle car1 = new Vehicle(chrysler, enterprise1, List.of(driver1), driver1, "vin__enterprise_1", 2000, 1982, 100000, Instant.now(), gpsTrack);
+            List<Ride> rides = List.of(Ride.of(second, third));
+
+            Vehicle car1 = new Vehicle(chrysler, enterprise1, List.of(driver1), driver1, "vin__enterprise_1", 2000, 1982, 100000, Instant.now(), gpsTrack, rides);
             crmService.saveVehicle(car1);
             Vehicle bike1 = new Vehicle(harley, enterprise1, List.of(driver2), driver2,"vin__enterprise_1", 3500, 1987, 30000, Instant.now());
             crmService.saveVehicle(bike1);
