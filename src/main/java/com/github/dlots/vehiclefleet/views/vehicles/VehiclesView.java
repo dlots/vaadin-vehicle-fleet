@@ -3,7 +3,6 @@ package com.github.dlots.vehiclefleet.views.vehicles;
 import com.github.dlots.vehiclefleet.data.entity.Enterprise;
 import com.github.dlots.vehiclefleet.data.entity.Vehicle;
 import com.github.dlots.vehiclefleet.service.CrmService;
-import com.github.dlots.vehiclefleet.service.ManagerService;
 import com.github.dlots.vehiclefleet.util.DateTimeUtil;
 import com.github.dlots.vehiclefleet.views.MainLayout;
 import com.vaadin.flow.component.UI;
@@ -20,7 +19,6 @@ import com.vaadin.flow.router.Route;
 import javax.annotation.security.PermitAll;
 import java.util.List;
 import java.util.TimeZone;
-import java.util.concurrent.atomic.AtomicReference;
 
 @PageTitle("Vehicles | Vehicle fleet")
 @Route(value = "vehicles", layout = MainLayout.class)
@@ -34,13 +32,10 @@ public class VehiclesView extends VerticalLayout {
 
     private final CrmService crmService;
 
-    private final ManagerService managerService;
-
     private final VehicleEditor editor;
 
-    public VehiclesView(CrmService crmService, ManagerService managerService, VehicleEditor editor) {
+    public VehiclesView(CrmService crmService, VehicleEditor editor) {
         this.crmService = crmService;
-        this.managerService = managerService;
         this.editor = editor;
 
         addClassName("vehicles-view");
@@ -86,7 +81,7 @@ public class VehiclesView extends VerticalLayout {
 
     private HorizontalLayout getToolbar() {
         enterpriseSelect.setLabel("Select enterprise");
-        List<Enterprise> managedEnterprises = managerService.getManagedEnterprises();
+        List<Enterprise> managedEnterprises = crmService.findCurrentManagerEnterprises();
         enterpriseSelect.setItems(managedEnterprises);
         enterpriseSelect.addValueChangeListener(event -> gridListDataView.refreshAll());
         enterpriseSelect.setValue(managedEnterprises.get(0));

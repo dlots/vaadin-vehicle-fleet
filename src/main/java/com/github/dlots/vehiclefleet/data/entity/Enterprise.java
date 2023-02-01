@@ -10,6 +10,8 @@ import javax.persistence.Entity;
 import javax.persistence.ManyToMany;
 import javax.persistence.OneToMany;
 import javax.validation.constraints.NotBlank;
+import javax.validation.constraints.NotNull;
+import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.TimeZone;
@@ -17,13 +19,18 @@ import java.util.TimeZone;
 @Entity
 public class Enterprise extends AbstractEntity {
     public Enterprise() {
+        timeZone = TimeZone.getTimeZone("UTC");
     }
 
     public Enterprise(String name, TimeZone timeZone, @Nullable List<Driver> drivers, @Nullable List<Vehicle> vehicles) {
+        this();
         this.name = name;
-        this.timeZone = timeZone == null ? TimeZone.getTimeZone("UTC") : timeZone;
+        if (timeZone != null) {
+            this.timeZone = timeZone;
+        }
         this.drivers = drivers;
         this.vehicles = vehicles;
+
     }
 
     @NotBlank
@@ -86,8 +93,11 @@ public class Enterprise extends AbstractEntity {
         this.vehicles = vehicles;
     }
 
-    @Nullable
+    @NotNull
     public List<Manager> getManagers() {
+        if (managers == null) {
+            managers = new ArrayList<>();
+        }
         return managers;
     }
 

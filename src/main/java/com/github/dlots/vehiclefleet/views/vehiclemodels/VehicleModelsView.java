@@ -16,7 +16,7 @@ import javax.annotation.security.PermitAll;
 @Route(value = "models", layout = MainLayout.class)
 @PermitAll
 public class VehicleModelsView extends VerticalLayout {
-    Grid<VehicleModel> vehicleModelGrid = new Grid<>(VehicleModel.class, false);
+    private final Grid<VehicleModel> vehicleModelGrid = new Grid<>(VehicleModel.class, false);
 
     private final CrmService service;
 

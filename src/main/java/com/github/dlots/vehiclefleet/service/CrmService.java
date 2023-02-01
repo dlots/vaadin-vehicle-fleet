@@ -3,7 +3,9 @@ package com.github.dlots.vehiclefleet.service;
 import com.github.dlots.vehiclefleet.data.entity.*;
 import com.github.dlots.vehiclefleet.data.repository.*;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.util.Pair;
 import org.springframework.stereotype.Service;
+import org.springframework.web.bind.annotation.PathVariable;
 
 import java.time.Instant;
 import java.time.LocalDateTime;
@@ -13,6 +15,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 @Service
 public class CrmService {
@@ -41,31 +44,69 @@ public class CrmService {
         return vehicleRepository.findById(id);
     }
 
-    public List<Vehicle> findAllVehiclesForEnterprises(List<Enterprise> enterprises) {
-        return vehicleRepository.findAllByEnterpriseIds(enterprises.stream().map(AbstractEntity::getId).collect(Collectors.toList()));
+    public Vehicle findVehicleFromManagedEnterprises(@PathVariable Long id) {
+        Optional<Vehicle> vehicle = vehicleRepository.findById(id);
+        if (vehicle.isPresent() && hasAccessToEnterprise(vehicle.get().getEnterprise().getId())) {
+            Vehicle v = vehicle.get();
+            v.resolvePurchaseDateTimeEnterpriseLocal();
+            return v;
+        }
+        return null;
+    }
+
+    public List<Vehicle> findManagedEnterprisesVehicles(Integer page, Integer size) {
+        List<Vehicle> result;
+        if (page == null || size == null) {
+            result = findAllVehiclesForManagedEnterprises();
+        } else {
+            result = findAllVehiclesForEnterprisesByPage(page, size);
+        }
+        result.forEach(Vehicle::resolvePurchaseDateTimeEnterpriseLocal);
+        return result;
     }
 
     public List<Vehicle> findAllVehiclesForManagedEnterprises() {
-        return findAllVehiclesForEnterprises(managerService.getManagedEnterprises());
+        return vehicleRepository.findAllByEnterpriseIds(
+                findCurrentManagerEnterprises().stream().map(AbstractEntity::getId).collect(Collectors.toList()));
     }
 
-    public List<Vehicle> findAllVehiclesForEnterprisesByPage(List<Enterprise> enterprises, int page, int size) {
+    public List<Vehicle> findAllVehiclesForEnterprisesByPage(int page, int size) {
         return vehicleRepository.findPageByEnterpriseIds(
-                        enterprises.stream().map(AbstractEntity::getId).collect(Collectors.toList()),
+                        findCurrentManagerEnterprises().stream().map(AbstractEntity::getId).collect(Collectors.toList()),
                         PageRequest.of(page, size))
                 .getContent();
     }
 
-    public Vehicle saveVehicle(Vehicle vehicle) {
-        return vehicleRepository.saveAndFlush(vehicle);
+    public Vehicle createNewVehicle(Vehicle vehicle) {
+        if (hasAccessToEnterprise(vehicle.getEnterprise().getId())) {
+            return saveVehicle(vehicle);
+        }
+        return null;
+    }
+
+    public Vehicle updateVehicle(Vehicle newVehicle, Long id) {
+        Optional<Vehicle> existingVehicle = findVehicleById(id);
+        if (existingVehicle.isPresent() && hasAccessToEnterprise(existingVehicle.get().getEnterprise().getId())) {
+            existingVehicle.get().update(newVehicle);
+            return saveVehicle(existingVehicle.get());
+        }
+        newVehicle.setId(id);
+        return saveVehicle(newVehicle);
+    }
+
+    public void deleteVehicle(Long id) {
+        Optional<Vehicle> vehicle = findVehicleById(id);
+        if (vehicle.isPresent() && hasAccessToEnterprise(vehicle.get().getEnterprise().getId())) {
+            vehicleRepository.deleteById(id);
+        }
     }
 
     public void deleteVehicle(Vehicle vehicle) {
         vehicleRepository.delete(vehicle);
     }
 
-    public void deleteVehicleById(Long id) {
-        vehicleRepository.deleteById(id);
+    public Vehicle saveVehicle(Vehicle vehicle) {
+        return vehicleRepository.saveAndFlush(vehicle);
     }
 
     public Optional<VehicleModel> findVehicleModelById(Long id) {
@@ -84,6 +125,11 @@ public class CrmService {
         return enterpriseRepository.findById(id);
     }
 
+    public List<Enterprise> findCurrentManagerEnterprises() {
+        Manager manager = (Manager) managerService.getAuthenticatedManager();
+        return enterpriseRepository.findAllByManagers_Id(manager.getId());
+    }
+
     public void saveEnterprises(Enterprise... enterprises) {
         enterpriseRepository.saveAllAndFlush(List.of(enterprises));
     }
@@ -92,8 +138,17 @@ public class CrmService {
         return driverRepository.findById(id);
     }
 
-    public Driver saveDriver(Driver driver) {
-        return driverRepository.saveAndFlush(driver);
+    public List<Driver> findManagedEnterprisesDrivers() {
+        return findCurrentManagerEnterprises().stream()
+                .flatMap(enterprise -> enterprise.getDrivers() != null ? enterprise.getDrivers().stream() : Stream.empty())
+                .collect(Collectors.toList());
+    }
+
+    public Driver createNewDriver(Driver driver) {
+        if (hasAccessToEnterprise(driver.getEnterprise().getId())) {
+            return driverRepository.saveAndFlush(driver);
+        }
+        return null;
     }
 
     public void saveDrivers(Driver... drivers) {
@@ -101,21 +156,60 @@ public class CrmService {
     }
 
     public List<GpsPoint> findGpsPointsForVehicleInDateRange(Long vehicleId, LocalDateTime start, LocalDateTime end) {
+        if (!hasAccessToVehicle(vehicleId)) {
+            return Collections.emptyList();
+        }
         ZoneId zoneId = enterpriseRepository.findTimeZoneByVehicleId(vehicleId).toZoneId();
         return gpsPointRepository.findByVehicleIdAndTimestampBetween(
                 vehicleId, ZonedDateTime.of(start, zoneId).toInstant(), ZonedDateTime.of(end, zoneId).toInstant());
     }
 
-    public List<GpsPoint> findRidesByVehicleIdInDateRange(Long vehicleId, LocalDateTime start, LocalDateTime end) {
-        ZoneId zoneId = enterpriseRepository.findTimeZoneByVehicleId(vehicleId).toZoneId();
-        Instant startInstant = ZonedDateTime.of(start, zoneId).toInstant();
-        Instant endInstant = ZonedDateTime.of(end, zoneId).toInstant();
-        Ride lowerBound = rideRepository.findByStartTimeAfter(startInstant);
-        Ride upperBound = rideRepository.findByEndTimeBefore(endInstant);
+    public List<GpsPoint> findRidesTrackByVehicleIdInDateRange(Long vehicleId, LocalDateTime start, LocalDateTime end) {
+        if (!hasAccessToVehicle(vehicleId)) {
+            return Collections.emptyList();
+        }
+        List<Ride> rides = findRidesByVehicleIdAndLocalDateRange(vehicleId, start, end);
+        Ride lowerBound = rides.get(0);
+        Ride upperBound = rides.get(rides.size() - 1);
         if (lowerBound == null || upperBound == null) {
             return Collections.emptyList();
         }
         return gpsPointRepository.findByVehicleIdAndTimestampBetween(
                 vehicleId, lowerBound.getStartTime(), upperBound.getEndTime());
+    }
+
+    public List<Ride> findRidesByVehicleIdInDateRange(Long vehicleId, LocalDateTime start, LocalDateTime end) {
+        if (!hasAccessToVehicle(vehicleId)) {
+            return Collections.emptyList();
+        }
+        List<Ride> rides = findRidesByVehicleIdAndLocalDateRange(vehicleId, start, end);
+        for (Ride ride : rides) {
+            ride.setStartPoint(gpsPointRepository.findByVehicleIdAndTimestamp(vehicleId, ride.getStartTime()));
+            ride.setEndPoint(gpsPointRepository.findByVehicleIdAndTimestamp(vehicleId, ride.getEndTime()));
+        }
+        return rides;
+    }
+
+    private List<Ride> findRidesByVehicleIdAndLocalDateRange(Long vehicleId, LocalDateTime start, LocalDateTime end) {
+        Pair<Instant, Instant> utcRange = getUtcRange(vehicleId, start, end);
+        return rideRepository.findByVehicleIdAndStartTimeAfterAndEndTimeBefore(
+                vehicleId, utcRange.getFirst(), utcRange.getSecond());
+    }
+
+    private Pair<Instant, Instant> getUtcRange(Long vehicleId, LocalDateTime start, LocalDateTime end) {
+        ZoneId zoneId = enterpriseRepository.findTimeZoneByVehicleId(vehicleId).toZoneId();
+        Instant startInstant = ZonedDateTime.of(start, zoneId).toInstant();
+        Instant endInstant = ZonedDateTime.of(end, zoneId).toInstant();
+        return Pair.of(startInstant, endInstant);
+    }
+
+    private boolean hasAccessToEnterprise(Long enterpriseId) {
+        return findCurrentManagerEnterprises().stream().anyMatch(e -> e.getId().equals(enterpriseId));
+    }
+
+    @SuppressWarnings("BooleanMethodIsAlwaysInverted")
+    private boolean hasAccessToVehicle(Long vehicleId) {
+        Optional<Vehicle> vehicle = findVehicleById(vehicleId);
+        return vehicle.isPresent() && hasAccessToEnterprise(vehicle.get().getEnterprise().getId());
     }
 }

@@ -15,8 +15,6 @@ import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 
-;
-
 @Entity
 public class Vehicle extends AbstractEntity {
     public Vehicle() {

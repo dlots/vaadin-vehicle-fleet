@@ -2,6 +2,7 @@ package com.github.dlots.vehiclefleet.data.entity;
 
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.github.dlots.vehiclefleet.util.json.GpsPointSerializer;
+import com.github.dlots.vehiclefleet.util.YandexGeocoderHandler;
 import com.vividsolutions.jts.geom.Coordinate;
 import com.vividsolutions.jts.geom.GeometryFactory;
 import com.vividsolutions.jts.geom.Point;
@@ -18,8 +19,8 @@ public class GpsPoint extends AbstractEntity{
     @Transient
     private static final GeometryFactory GEOMETRY_FACTORY = new GeometryFactory();
 
-    @Column(columnDefinition = "geometry(Point,4326)")
-    private Point point;
+    @Transient
+    private static final YandexGeocoderHandler GEOCODER = new YandexGeocoderHandler();
 
     public GpsPoint() {
     }
@@ -32,6 +33,14 @@ public class GpsPoint extends AbstractEntity{
     public static GpsPoint of(double x, double y, Instant timestamp) {
         return new GpsPoint(GEOMETRY_FACTORY.createPoint(new Coordinate(x, y)), timestamp);
     }
+
+    @NotNull
+    @Column(columnDefinition = "geometry(Point,4326)")
+    @SuppressWarnings("com.haulmont.jpb.UnsupportedTypeWithoutConverterInspection")
+    private Point point;
+
+    @Transient
+    private String address;
 
     private Instant timestamp;
 
@@ -75,5 +84,13 @@ public class GpsPoint extends AbstractEntity{
 
     public void setEnterpriseTimeZone(@Nullable TimeZone enterpriseTimeZone) {
         this.enterpriseTimeZone = enterpriseTimeZone;
+    }
+
+    public String getAddress() {
+        return address;
+    }
+
+    public void populateAddressFromCoordinates() {
+        address = GEOCODER.getAddressFromCoordinates(point.getX(), point.getY());
     }
 }

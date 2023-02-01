@@ -4,9 +4,8 @@ import com.github.dlots.vehiclefleet.data.entity.Ride;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.time.Instant;
+import java.util.List;
 
 public interface RideRepository extends JpaRepository<Ride, Long> {
-    Ride findByStartTimeAfter(Instant start);
-
-    Ride findByEndTimeBefore(Instant start);
+    List<Ride> findByVehicleIdAndStartTimeAfterAndEndTimeBefore(Long vehicleId, Instant start, Instant end);
 }

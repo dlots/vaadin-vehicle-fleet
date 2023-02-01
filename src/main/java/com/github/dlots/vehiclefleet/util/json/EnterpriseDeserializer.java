@@ -1,6 +1,5 @@
 package com.github.dlots.vehiclefleet.util.json;
 
-import com.fasterxml.jackson.core.JacksonException;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.databind.DeserializationContext;
 import com.fasterxml.jackson.databind.JsonDeserializer;
@@ -21,7 +20,7 @@ public class EnterpriseDeserializer extends JsonDeserializer<Enterprise> {
     }
 
     @Override
-    public Enterprise deserialize(JsonParser jsonParser, DeserializationContext deserializationContext) throws IOException, JacksonException {
+    public Enterprise deserialize(JsonParser jsonParser, DeserializationContext deserializationContext) throws IOException {
         return crmService.findEnterpriseById(jsonParser.getLongValue()).orElse(null);
     }
 }

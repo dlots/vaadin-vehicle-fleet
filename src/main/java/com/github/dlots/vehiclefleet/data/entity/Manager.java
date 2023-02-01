@@ -23,7 +23,7 @@ public class Manager extends AbstractEntity implements UserDetails {
     public Manager() {
     }
 
-    public Manager(String username, String password, List<Enterprise> enterprises) {
+    public Manager(String username, String password, @Nullable List<Enterprise> enterprises) {
         this.username = username;
         this.password = password;
         this.enterprises = enterprises;
@@ -35,7 +35,7 @@ public class Manager extends AbstractEntity implements UserDetails {
     @NotBlank
     private String password;
 
-    @ManyToMany(fetch = FetchType.EAGER)
+    @ManyToMany()
     @JoinTable(
             name = "manager_enterprise",
             joinColumns = @JoinColumn(name = "manager_id"),
@@ -99,5 +99,12 @@ public class Manager extends AbstractEntity implements UserDetails {
     @Override
     public boolean isEnabled() {
         return true;
+    }
+
+    @PrePersist
+    private void updateRelations() {
+        if (enterprises != null) {
+            enterprises.forEach(enterprise -> enterprise.getManagers().add(this));
+        }
     }
 }

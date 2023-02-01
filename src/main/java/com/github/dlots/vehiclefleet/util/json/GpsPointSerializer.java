@@ -21,8 +21,11 @@ public class GpsPointSerializer extends StdSerializer<GpsPoint> {
     public void serialize(GpsPoint gpsPoint, JsonGenerator jsonGenerator, SerializerProvider serializerProvider) throws IOException {
         jsonGenerator.writeStartObject();
         Point point = gpsPoint.getPoint();
-        jsonGenerator.writeNumberField("lat", point.getX());
-        jsonGenerator.writeNumberField("long", point.getY());
+        jsonGenerator.writeNumberField("latitude", point.getX());
+        jsonGenerator.writeNumberField("longitude", point.getY());
+        if (gpsPoint.getAddress() != null) {
+            jsonGenerator.writeStringField("address", gpsPoint.getAddress());
+        }
         serializerProvider.defaultSerializeField("timestamp", gpsPoint.getTimestamp().atZone(gpsPoint.getVehicle().getEnterprise().getTimeZone().toZoneId()), jsonGenerator);
         jsonGenerator.writeEndObject();
     }

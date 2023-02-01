@@ -1,7 +1,7 @@
 package com.github.dlots.vehiclefleet.views.enterprises;
 
 import com.github.dlots.vehiclefleet.data.entity.Enterprise;
-import com.github.dlots.vehiclefleet.service.ManagerService;
+import com.github.dlots.vehiclefleet.service.CrmService;
 import com.github.dlots.vehiclefleet.views.MainLayout;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.grid.Grid;
@@ -16,12 +16,12 @@ import javax.annotation.security.PermitAll;
 @Route(value = "", layout = MainLayout.class)
 @PermitAll
 public class EnterprisesView extends VerticalLayout {
-    Grid<Enterprise> enterpriseGrid = new Grid<>(Enterprise.class, false);
+    private final Grid<Enterprise> enterpriseGrid = new Grid<>(Enterprise.class, false);
 
-    private final ManagerService managerService;
+    private final CrmService crmService;
 
-    public EnterprisesView(ManagerService managerService) {
-        this.managerService = managerService;
+    public EnterprisesView(CrmService crmService) {
+        this.crmService = crmService;
 
         addClassName("enterprises-view");
         setSizeFull();
@@ -49,6 +49,6 @@ public class EnterprisesView extends VerticalLayout {
     }
 
     private void updateEnterpriseList() {
-        enterpriseGrid.setItems(managerService.getManagedEnterprises());
+        enterpriseGrid.setItems(crmService.findCurrentManagerEnterprises());
     }
 }
