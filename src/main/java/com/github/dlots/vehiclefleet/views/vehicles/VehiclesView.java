@@ -13,18 +13,20 @@ import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.select.Select;
-import com.vaadin.flow.router.PageTitle;
-import com.vaadin.flow.router.Route;
+import com.vaadin.flow.router.*;
 
 import javax.annotation.security.PermitAll;
 import java.util.List;
+import java.util.Optional;
 import java.util.TimeZone;
 
 @PageTitle("Vehicles | Vehicle fleet")
 @Route(value = "vehicles", layout = MainLayout.class)
 @PermitAll
-public class VehiclesView extends VerticalLayout {
-    private final Grid<Vehicle> grid;
+public class VehiclesView extends VerticalLayout implements HasUrlParameter<Long> {
+    private final Grid<Vehicle> vehicleGrid;
+
+    private Vehicle selectedVehicle;
 
     private GridListDataView<Vehicle> gridListDataView;
 
@@ -41,9 +43,9 @@ public class VehiclesView extends VerticalLayout {
         addClassName("vehicles-view");
         setSizeFull();
 
-        grid = new Grid<>();
+        vehicleGrid = new Grid<>();
         configureVehicleGrid();
-        grid.asSingleSelect().addValueChangeListener(e -> editor.editVehicle(e.getValue()));
+        vehicleGrid.asSingleSelect().addValueChangeListener(e -> selectedVehicle = e.getValue());
         updateVehicleList();
 
         editor.setChangeHandler(() -> {
@@ -52,31 +54,34 @@ public class VehiclesView extends VerticalLayout {
         });
 
         this.enterpriseSelect = new Select<>();
-        add(getToolbar(), grid, editor);
+        add(getToolbar(), vehicleGrid, editor);
     }
 
     private void configureVehicleGrid() {
-        grid.addClassNames("vehicle-grid");
-        grid.setSizeFull();
+        vehicleGrid.addClassNames("vehicle-grid");
+        vehicleGrid.setSizeFull();
 
-        grid.addColumn(vehicle -> vehicle.getVehicleModel().toString()).setHeader("Model");
-        grid.addColumn(Vehicle::getVin).setHeader("VIN");
-        grid.addColumn(Vehicle::getPriceUsd).setHeader("Price, USD");
-        grid.addColumn(Vehicle::getManufactureYear).setHeader("Year");
-        grid.addColumn(Vehicle::getDistanceTravelledKm).setHeader("Distance travelled, km");
-        Grid.Column<Vehicle> column = grid.addColumn(v -> DateTimeUtil.formatInstantToString(
+        vehicleGrid.addColumn(vehicle -> vehicle.getVehicleModel().toString()).setHeader("Model");
+        vehicleGrid.addColumn(Vehicle::getVin).setHeader("VIN");
+        vehicleGrid.addColumn(Vehicle::getPriceUsd).setHeader("Price, USD");
+        vehicleGrid.addColumn(Vehicle::getManufactureYear).setHeader("Year");
+        vehicleGrid.addColumn(Vehicle::getDistanceTravelledKm).setHeader("Distance travelled, km");
+        Grid.Column<Vehicle> column = vehicleGrid.addColumn(v -> DateTimeUtil.formatInstantToString(
                         v.getPurchaseDateTimeUtc(),
                         v.getEnterprise().getTimeZone()))
                 .setHeader("Purchased (enterprise TZ)");
         UI.getCurrent().getPage().retrieveExtendedClientDetails(extendedClientDetails -> {
-            grid.removeColumn(column);
-            grid.addColumn(v -> DateTimeUtil.formatInstantToString(
-                            v.getPurchaseDateTimeUtc(),
-                            TimeZone.getTimeZone(extendedClientDetails.getTimeZoneId())))
-                    .setHeader("Purchased (your TZ)");
-            grid.getColumns().forEach(col -> col.setAutoWidth(true));
+            vehicleGrid.removeColumn(column);
+            vehicleGrid.addColumn(v -> {
+                TimeZone clientTimeZone = TimeZone.getTimeZone(extendedClientDetails.getTimeZoneId());
+                editor.setTimeZone(clientTimeZone);
+                return DateTimeUtil.formatInstantToString(
+                        v.getPurchaseDateTimeUtc(),
+                        clientTimeZone);
+            }).setHeader("Purchased (your TZ)");
+            vehicleGrid.getColumns().forEach(col -> col.setAutoWidth(true));
         });
-        grid.getColumns().forEach(col -> col.setAutoWidth(true));
+        vehicleGrid.getColumns().forEach(col -> col.setAutoWidth(true));
     }
 
     private HorizontalLayout getToolbar() {
@@ -84,19 +89,36 @@ public class VehiclesView extends VerticalLayout {
         List<Enterprise> managedEnterprises = crmService.findCurrentManagerEnterprises();
         enterpriseSelect.setItems(managedEnterprises);
         enterpriseSelect.addValueChangeListener(event -> gridListDataView.refreshAll());
-        enterpriseSelect.setValue(managedEnterprises.get(0));
+        if (!managedEnterprises.isEmpty()) {
+            enterpriseSelect.setValue(managedEnterprises.get(0));
+        }
 
         Button addContactButton = new Button("Add vehicle", VaadinIcon.PLUS.create());
-        addContactButton.addClickListener(e -> editor.editVehicle(new Vehicle()));
+        addContactButton.addClickListener(e -> editor.editVehicle(new Vehicle(), true));
+        Button viewSelectedButton = new Button("View selected", VaadinIcon.EYE.create());
+        viewSelectedButton.addClickListener(e -> editor.editVehicle(selectedVehicle, false));
+        Button editSelectedButton = new Button("Edit selected", VaadinIcon.PENCIL.create());
+        editSelectedButton.addClickListener(e -> editor.editVehicle(selectedVehicle, true));
 
-        HorizontalLayout toolbar = new HorizontalLayout(enterpriseSelect, addContactButton);
+        HorizontalLayout toolbar = new HorizontalLayout(
+                enterpriseSelect, addContactButton, viewSelectedButton, editSelectedButton);
         toolbar.addClassName("toolbar");
         toolbar.setAlignItems(Alignment.END);
         return toolbar;
     }
 
     private void updateVehicleList() {
-        gridListDataView = grid.setItems(crmService.findAllVehiclesForManagedEnterprises());
+        gridListDataView = vehicleGrid.setItems(crmService.findAllVehiclesForManagedEnterprises());
         gridListDataView.addFilter(vehicle -> vehicle.getEnterprise().getId().equals(enterpriseSelect.getValue().getId()));
+    }
+
+    @Override
+    public void setParameter(BeforeEvent beforeEvent, @OptionalParameter Long parameter) {
+        List<String> ids = beforeEvent.getLocation().getQueryParameters().getParameters().get("enterprise_id");
+        if (ids != null && !ids.isEmpty() && !enterpriseSelect.isEmpty()) {
+            Long enterpriseId = Long.parseLong(ids.get(0));
+            Optional<Enterprise> enterprise = crmService.findEnterpriseById(enterpriseId);
+            enterprise.ifPresent(enterpriseSelect::setValue);
+        }
     }
 }

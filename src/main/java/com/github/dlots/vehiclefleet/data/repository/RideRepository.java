@@ -7,5 +7,7 @@ import java.time.Instant;
 import java.util.List;
 
 public interface RideRepository extends JpaRepository<Ride, Long> {
+    List<Ride> findAllByVehicle_Id(Long vehicleId);
+
     List<Ride> findByVehicleIdAndStartTimeAfterAndEndTimeBefore(Long vehicleId, Instant start, Instant end);
 }

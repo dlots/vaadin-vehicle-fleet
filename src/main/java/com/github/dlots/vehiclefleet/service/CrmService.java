@@ -122,7 +122,10 @@ public class CrmService {
     }
 
     public Optional<Enterprise> findEnterpriseById(Long id) {
-        return enterpriseRepository.findById(id);
+        if (hasAccessToEnterprise(id)) {
+            return enterpriseRepository.findById(id);
+        }
+        return Optional.empty();
     }
 
     public List<Enterprise> findCurrentManagerEnterprises() {
@@ -155,6 +158,13 @@ public class CrmService {
         driverRepository.saveAllAndFlush(List.of(drivers));
     }
 
+    public List<GpsPoint> findGpsPointsForVehicleInUtcRange(Long vehicleId, Instant start, Instant end) {
+        if (!hasAccessToVehicle(vehicleId)) {
+            return Collections.emptyList();
+        }
+        return gpsPointRepository.findByVehicleIdAndTimestampBetween(vehicleId, start, end);
+    }
+
     public List<GpsPoint> findGpsPointsForVehicleInDateRange(Long vehicleId, LocalDateTime start, LocalDateTime end) {
         if (!hasAccessToVehicle(vehicleId)) {
             return Collections.emptyList();
@@ -176,6 +186,13 @@ public class CrmService {
         }
         return gpsPointRepository.findByVehicleIdAndTimestampBetween(
                 vehicleId, lowerBound.getStartTime(), upperBound.getEndTime());
+    }
+
+    public List<Ride> findRidesByVehicleId(Long vehicleId) {
+        if (!hasAccessToVehicle(vehicleId)) {
+            return Collections.emptyList();
+        }
+        return rideRepository.findAllByVehicle_Id(vehicleId);
     }
 
     public List<Ride> findRidesByVehicleIdInDateRange(Long vehicleId, LocalDateTime start, LocalDateTime end) {

@@ -1,10 +1,13 @@
 package com.github.dlots.vehiclefleet.views.vehicles;
 
+import com.github.dlots.vehiclefleet.data.entity.Ride;
 import com.github.dlots.vehiclefleet.data.entity.Vehicle;
 import com.github.dlots.vehiclefleet.data.entity.VehicleModel;
 import com.github.dlots.vehiclefleet.service.CrmService;
+import com.github.dlots.vehiclefleet.util.DateTimeUtil;
 import com.vaadin.flow.component.KeyNotifier;
 import com.vaadin.flow.component.button.Button;
+import com.vaadin.flow.component.grid.Grid;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
@@ -16,10 +19,12 @@ import com.vaadin.flow.spring.annotation.SpringComponent;
 import com.vaadin.flow.spring.annotation.UIScope;
 import com.vaadin.flow.theme.lumo.LumoIcon;
 
+import java.util.TimeZone;
+
 @SpringComponent
 @UIScope
-public class VehicleEditor extends VerticalLayout implements KeyNotifier {
-    private final CrmService service;
+public class VehicleEditor extends HorizontalLayout implements KeyNotifier {
+    private final CrmService crmService;
 
     private final Binder<Vehicle> binder = new Binder<>(Vehicle.class);
 
@@ -27,40 +32,56 @@ public class VehicleEditor extends VerticalLayout implements KeyNotifier {
 
     private Vehicle vehicle;
 
+    private TimeZone timeZone;
+
     private final Select<VehicleModel> vehicleModel;
     private final TextField vin;
     private final TextField priceUsd;
     private final TextField manufactureYear;
-    private final TextField kmDistanceTravelled;
+    private final TextField distanceTravelledKm;
 
-    public VehicleEditor(CrmService service) {
-        this.service = service;
+    private final Grid<Ride> rideGrid;
+    private final GpsTrackViewer gpsTrackViewer;
+
+    Button saveButton;
+    Button deleteButton;
+
+    public VehicleEditor(CrmService crmService) {
+        this.crmService = crmService;
 
         vehicleModel = new Select<>();
         vin = new TextField();
         priceUsd = new TextField();
         manufactureYear = new TextField();
-        kmDistanceTravelled = new TextField();
+        distanceTravelledKm = new TextField();
         setFieldsProperties();
 
-        Button save = new Button("Save", VaadinIcon.CHECK.create());
-        save.addClickListener(e -> save());
-        Button delete = new Button("Delete", VaadinIcon.TRASH.create());
-        delete.addClickListener(e -> delete());
+        saveButton = new Button("Save", VaadinIcon.CHECK.create());
+        saveButton.addClickListener(e -> save());
+        deleteButton = new Button("Delete", VaadinIcon.TRASH.create());
+        deleteButton.addClickListener(e -> delete());
         Button cancel = new Button("Cancel", LumoIcon.UNDO.create());
-        cancel.addClickListener(e -> editVehicle(null));
-        HorizontalLayout actions = new HorizontalLayout(save, delete, cancel);
-
-        add(vehicleModel, vin, priceUsd, manufactureYear, kmDistanceTravelled, actions);
-
+        cancel.addClickListener(e -> editVehicle(null, false));
+        HorizontalLayout actions = new HorizontalLayout(saveButton, deleteButton, cancel);
+        VerticalLayout mainLayout = new VerticalLayout(vehicleModel, vin, priceUsd, manufactureYear, distanceTravelledKm, actions);
         binder.bindInstanceFields(this);
 
+        rideGrid = new Grid<>();
+        configureRideGrid();
+        gpsTrackViewer = new GpsTrackViewer(crmService);
+        rideGrid.asSingleSelect().addValueChangeListener(e -> gpsTrackViewer.showGpsTrack(vehicle, e.getValue()));
+
+        add(mainLayout, rideGrid, gpsTrackViewer);
         setVisible(false);
+    }
+
+    public void setTimeZone(TimeZone timeZone) {
+        this.timeZone = timeZone;
     }
 
     private void setFieldsProperties() {
         vehicleModel.setLabel("Vehicle model");
-        vehicleModel.setItems(service.findAllVehicleModels());
+        vehicleModel.setItems(crmService.findAllVehicleModels());
         vehicleModel.setPlaceholder("Select model");
 
         vin.setLabel("VIN");
@@ -79,33 +100,52 @@ public class VehicleEditor extends VerticalLayout implements KeyNotifier {
         manufactureYear.setMinLength(4);
         manufactureYear.setMaxLength(4);
 
-        kmDistanceTravelled.setLabel("Distance travelled");
-        kmDistanceTravelled.setPlaceholder("Enter distance travelled");
-        kmDistanceTravelled.setSuffixComponent(new Span("km"));
+        distanceTravelledKm.setLabel("Distance travelled");
+        distanceTravelledKm.setPlaceholder("Enter distance travelled");
+        distanceTravelledKm.setSuffixComponent(new Span("km"));
+    }
+
+    private void configureRideGrid() {
+        rideGrid.addClassNames("ride-grid");
+        rideGrid.setSizeFull();
+        rideGrid.addColumn(ride -> DateTimeUtil.formatInstantToString(ride.getStartTime(), timeZone))
+                .setHeader("Ride started (your TZ)");
+        rideGrid.getColumns().forEach(col -> col.setAutoWidth(true));
     }
 
     private void save() {
-        service.saveVehicle(vehicle);
+        crmService.saveVehicle(vehicle);
         changeHandler.onChange();
     }
 
     private void delete() {
-        service.deleteVehicle(vehicle);
+        crmService.deleteVehicle(vehicle);
         changeHandler.onChange();
     }
 
-    public final void editVehicle(Vehicle v) {
+    public final void editVehicle(Vehicle v, boolean allowEdit) {
         if (v == null) {
             setVisible(false);
             return;
         }
-        if (v.getId() != null) {
-            //noinspection OptionalGetWithoutIsPresent
-            vehicle = service.findVehicleById(v.getId()).get();
-        } else {
-            vehicle = v;
-        }
+        vehicle = v;
         binder.setBean(vehicle);
+
+        vehicleModel.setReadOnly(!allowEdit);
+        vin.setReadOnly(!allowEdit);
+        priceUsd.setReadOnly(!allowEdit);
+        manufactureYear.setReadOnly(!allowEdit);
+        distanceTravelledKm.setReadOnly(!allowEdit);
+        saveButton.setVisible(allowEdit);
+        deleteButton.setVisible(allowEdit);
+
+        if (!allowEdit) {
+            rideGrid.setItems(crmService.findRidesByVehicleId(vehicle.getId()));
+        }
+        rideGrid.setVisible(!allowEdit);
+        gpsTrackViewer.setVisible(false);
+
+        setSizeFull();
         setVisible(true);
     }
 

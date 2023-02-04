@@ -3,9 +3,8 @@ package com.github.dlots.vehiclefleet.views.enterprises;
 import com.github.dlots.vehiclefleet.data.entity.Enterprise;
 import com.github.dlots.vehiclefleet.service.CrmService;
 import com.github.dlots.vehiclefleet.views.MainLayout;
-import com.vaadin.flow.component.button.Button;
+import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.grid.Grid;
-import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
@@ -26,7 +25,7 @@ public class EnterprisesView extends VerticalLayout {
         addClassName("enterprises-view");
         setSizeFull();
         configureEnterpriseGrid();
-        add(/*getToolbar(),*/ enterpriseGrid);
+        add(enterpriseGrid);
 
         updateEnterpriseList();
     }
@@ -34,18 +33,11 @@ public class EnterprisesView extends VerticalLayout {
     private void configureEnterpriseGrid() {
         enterpriseGrid.addClassNames("enterprise-grid");
         enterpriseGrid.setSizeFull();
-
         enterpriseGrid.addColumn(Enterprise::getName).setHeader("Name");
-
         enterpriseGrid.getColumns().forEach(col -> col.setAutoWidth(true));
-    }
-
-    private HorizontalLayout getToolbar() {
-        Button addContactButton = new Button("Add enterprise");
-
-        HorizontalLayout toolbar = new HorizontalLayout(addContactButton);
-        toolbar.addClassName("toolbar");
-        return toolbar;
+        enterpriseGrid.asSingleSelect().addValueChangeListener(e -> {
+            UI.getCurrent().navigate(String.format("vehicles?enterprise_id=%s", e.getValue().getId()));
+        });
     }
 
     private void updateEnterpriseList() {

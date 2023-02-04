@@ -2,7 +2,7 @@ package com.github.dlots.vehiclefleet.data.entity;
 
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.github.dlots.vehiclefleet.util.json.GpsPointSerializer;
-import com.github.dlots.vehiclefleet.util.YandexGeocoderHandler;
+import com.github.dlots.vehiclefleet.util.YandexMapsHandler;
 import com.vividsolutions.jts.geom.Coordinate;
 import com.vividsolutions.jts.geom.GeometryFactory;
 import com.vividsolutions.jts.geom.Point;
@@ -20,7 +20,7 @@ public class GpsPoint extends AbstractEntity{
     private static final GeometryFactory GEOMETRY_FACTORY = new GeometryFactory();
 
     @Transient
-    private static final YandexGeocoderHandler GEOCODER = new YandexGeocoderHandler();
+    private static final YandexMapsHandler YANDEX_MAPS_HANDLER = new YandexMapsHandler();
 
     public GpsPoint() {
     }
@@ -61,6 +61,14 @@ public class GpsPoint extends AbstractEntity{
         this.point = point;
     }
 
+    public double getLatitude() {
+        return point.getX();
+    }
+
+    public double getLongitude() {
+        return point.getY();
+    }
+
     public Instant getTimestamp() {
         return timestamp;
     }
@@ -91,6 +99,6 @@ public class GpsPoint extends AbstractEntity{
     }
 
     public void populateAddressFromCoordinates() {
-        address = GEOCODER.getAddressFromCoordinates(point.getX(), point.getY());
+        address = YANDEX_MAPS_HANDLER.getAddressFromCoordinates(point.getX(), point.getY());
     }
 }
