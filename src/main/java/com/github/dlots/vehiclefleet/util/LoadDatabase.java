@@ -1,5 +1,6 @@
-package com.github.dlots.vehiclefleet.data;
+package com.github.dlots.vehiclefleet.util;
 
+import com.github.dlots.vehiclefleet.data.VehicleType;
 import com.github.dlots.vehiclefleet.data.entity.*;
 import com.github.dlots.vehiclefleet.data.repository.ManagerRepository;
 import com.github.dlots.vehiclefleet.service.CrmService;
@@ -10,6 +11,7 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.TimeZone;
 
@@ -43,10 +45,13 @@ public class LoadDatabase {
             Driver driver6 = new Driver("Driver6", 1257, enterprise3, null);
             crmService.saveDrivers(driver1, driver2, unemployed, driver3, driver4, driver5, driver6);
 
-            Instant second = Instant.now();
-            Instant middle = second.minus(7, ChronoUnit.MINUTES);
-            Instant first = second.minus(15, ChronoUnit.MINUTES);
-            List<GpsPoint> gpsTrack = List.of(GpsPoint.of(55.767484, 38.661334, first), GpsPoint.of(55.773729, 38.685017, middle), GpsPoint.of(55.777692, 38.673192, second));
+//            Instant second = Instant.now();
+//            Instant middle = second.minus(7, ChronoUnit.MINUTES);
+//            Instant first = second.minus(15, ChronoUnit.MINUTES);
+//            List<GpsPoint> gpsTrack = List.of(GpsPoint.of(55.767484, 38.661334, first), GpsPoint.of(55.773729, 38.685017, middle), GpsPoint.of(55.775961, 38.674821, second));
+            List<GpsPoint> gpsTrack = new ArrayList<>();
+            Instant first = Instant.now();
+            Instant second = first.plus(30, ChronoUnit.MINUTES);
             List<Ride> rides = List.of(Ride.of(first, second));
 
             Vehicle car1 = new Vehicle(chrysler, enterprise1, List.of(driver1), driver1, "vin__enterprise_1", 2000, 1982, 100000, Instant.now(), gpsTrack, rides);

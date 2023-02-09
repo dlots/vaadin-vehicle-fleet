@@ -1,4 +1,4 @@
-package com.github.dlots.vehiclefleet.data.entity;
+package com.github.dlots.vehiclefleet.data;
 
 public enum VehicleType {
     BUS("Bus"),

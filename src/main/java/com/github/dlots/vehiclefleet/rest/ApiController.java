@@ -1,5 +1,7 @@
 package com.github.dlots.vehiclefleet.rest;
 
+import com.github.dlots.vehiclefleet.data.Report;
+import com.github.dlots.vehiclefleet.data.ReportType;
 import com.github.dlots.vehiclefleet.data.entity.*;
 import com.github.dlots.vehiclefleet.service.CrmService;
 import org.springframework.format.annotation.DateTimeFormat;
@@ -7,6 +9,7 @@ import org.springframework.web.bind.annotation.*;
 
 import javax.annotation.security.RolesAllowed;
 import java.time.LocalDateTime;
+import java.time.temporal.ChronoUnit;
 import java.util.List;
 
 @RestController
@@ -16,9 +19,11 @@ public class ApiController {
     private static final String ENTERPRISES = "/enterprises";
     private static final String DRIVERS = "/drivers";
     private static final String VEHICLES = "/vehicles";
-    private static final String GPS_TRACK = "/gps_track";
+    private static final String GPS = "/gps";
     private static final String RIDES_TRACK = "/rides_gps_track";
     private static final String RIDES = "/rides";
+    private static final String REPORTS = "/reports";
+    private static final String DISTANCE = "/distance";
     private static final String ID = "/{id}";
 
     private final CrmService crmService;
@@ -81,7 +86,13 @@ public class ApiController {
         crmService.deleteVehicle(id);
     }
 
-    @GetMapping(API + GPS_TRACK + ID)
+    @PostMapping(API + GPS)
+    @RolesAllowed(Manager.ROLE)
+    public GpsPoint addNewGpsPointForVehicle(@RequestBody GpsPoint gpsPoint) {
+        return crmService.createNewGpsPoint(gpsPoint);
+    }
+
+    @GetMapping(API + GPS + ID)
     @RolesAllowed(Manager.ROLE)
     public List<GpsPoint> getGpsTrackByVehicleIdAndDateRange(
             @PathVariable Long id,
@@ -106,5 +117,16 @@ public class ApiController {
             @RequestParam("start") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime start,
             @RequestParam("end") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime end) {
         return crmService.findRidesByVehicleIdInDateRange(id, start, end);
+    }
+
+    @GetMapping(API + REPORTS + DISTANCE + ID)
+    @RolesAllowed(Manager.ROLE)
+    public Report getDistanceTravelledReportByVehicleId(
+            @PathVariable Long id,
+            @RequestParam("timeunit") String timeUnit,
+            @RequestParam("start") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime start,
+            @RequestParam("end") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime end) {
+        return crmService.getReportForVehicleByChronoUnitInDateRange(
+                id, ReportType.DISTANCE_TRAVELLED, ChronoUnit.valueOf(timeUnit), start, end);
     }
 }

@@ -1,5 +1,7 @@
 package com.github.dlots.vehiclefleet.data.entity;
 
+import com.github.dlots.vehiclefleet.data.VehicleType;
+
 import javax.persistence.Entity;
 import javax.persistence.EnumType;
 import javax.persistence.Enumerated;

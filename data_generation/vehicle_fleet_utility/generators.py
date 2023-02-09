@@ -1,22 +1,25 @@
-import datetime
 import random
 import string
 import names
 import tqdm
 
-import curl_requests
+import graphhopper_api_handler
+import vehicle_api_handler
 
-CURRENT_YEAR = datetime.date.today().year
+from datetime import datetime, date, timezone
+from time import sleep
+
+CURRENT_YEAR = date.today().year
 
 
-def generate_drivers_for_vehicle(vehicle, curl_handler):
+def __generate_drivers_for_vehicle(vehicle, api_handler):
     vehicle['driverIds'] = []
     vehicle['activeDriverId'] = None
     if random.randint(0, 9) != 0:
         return
     num_drivers = random.randint(1, 5)
     for _ in range(num_drivers):
-        new_driver_id = curl_handler.post_new_driver({
+        new_driver_id = api_handler.post_new_driver({
             'name': names.get_full_name(),
             'salaryUsd': random.randint(1000, 9000),
             'enterpriseId': vehicle['enterpriseId'],
@@ -26,7 +29,7 @@ def generate_drivers_for_vehicle(vehicle, curl_handler):
     vehicle['activeDriverId'] = random.choice(vehicle['driverIds'])
 
 
-def generate_vehicle(models, enterprise_id, curl_handler):
+def __generate_vehicle(models, enterprise_id, api_handler):
     vehicle = {
         'modelId': random.choice(models),
         'enterpriseId': enterprise_id,
@@ -35,14 +38,28 @@ def generate_vehicle(models, enterprise_id, curl_handler):
         'manufactureYear': random.randint(2010, CURRENT_YEAR),
         'kmDistanceTravelled': random.randint(0, 300000)
     }
-    generate_drivers_for_vehicle(vehicle, curl_handler)
+    __generate_drivers_for_vehicle(vehicle, api_handler)
     return vehicle
 
 
 def generate_vehicles(enterprise_ids, num_vehicles):
-    curl_handler = curl_requests.CurlHandler()
-    models = curl_handler.get_vehicle_model_ids()
+    api_handler = vehicle_api_handler.CurlHandler()
+    models = api_handler.get_vehicle_model_ids()
     for enterprise_id in tqdm.tqdm(enterprise_ids):
         for _ in tqdm.tqdm(range(num_vehicles)):
-            vehicle = generate_vehicle(models, enterprise_id, curl_handler)
-            curl_handler.post_new_vehicle(vehicle)
+            vehicle = __generate_vehicle(models, enterprise_id, api_handler)
+            api_handler.post_new_vehicle(vehicle)
+
+
+def generate_track(vehicle_id, start_point, finish_point):
+    api_handler = vehicle_api_handler.CurlHandler()
+    track = graphhopper_api_handler.get_gps_route(start_point, finish_point)
+    for point in tqdm.tqdm(track):
+
+        point_payload = {
+            "vehicleId": vehicle_id,
+            "point": "{},{}".format(point[1], point[0]),
+            "timestamp": datetime.now(timezone.utc).isoformat()
+        }
+        api_handler.post_new_gps_point(point_payload)
+        # sleep(1)

@@ -1,7 +1,10 @@
 package com.github.dlots.vehiclefleet.service;
 
+import com.github.dlots.vehiclefleet.data.Report;
+import com.github.dlots.vehiclefleet.data.ReportType;
 import com.github.dlots.vehiclefleet.data.entity.*;
 import com.github.dlots.vehiclefleet.data.repository.*;
+import com.github.dlots.vehiclefleet.util.RoutingHandler;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.util.Pair;
 import org.springframework.stereotype.Service;
@@ -11,6 +14,7 @@ import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
+import java.time.temporal.ChronoUnit;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
@@ -19,6 +23,8 @@ import java.util.stream.Stream;
 
 @Service
 public class CrmService {
+    private static final RoutingHandler ROUTING_HANDLER = new RoutingHandler();
+
     private final VehicleRepository vehicleRepository;
     private final VehicleModelRepository vehicleModelRepository;
     private final EnterpriseRepository enterpriseRepository;
@@ -63,6 +69,13 @@ public class CrmService {
         }
         result.forEach(Vehicle::resolvePurchaseDateTimeEnterpriseLocal);
         return result;
+    }
+
+    public List<Vehicle> findVehiclesForEnterprise(Long enterpriseId) {
+        if (!hasAccessToEnterprise(enterpriseId)) {
+            return Collections.emptyList();
+        }
+        return vehicleRepository.findAllByEnterpriseIds(List.of(enterpriseId));
     }
 
     public List<Vehicle> findAllVehiclesForManagedEnterprises() {
@@ -158,6 +171,13 @@ public class CrmService {
         driverRepository.saveAllAndFlush(List.of(drivers));
     }
 
+    public GpsPoint createNewGpsPoint(GpsPoint gpsPoint) {
+        if (hasAccessToVehicle(gpsPoint.getVehicle().getId())) {
+            return gpsPointRepository.saveAndFlush(gpsPoint);
+        }
+        return null;
+    }
+
     public List<GpsPoint> findGpsPointsForVehicleInUtcRange(Long vehicleId, Instant start, Instant end) {
         if (!hasAccessToVehicle(vehicleId)) {
             return Collections.emptyList();
@@ -211,6 +231,26 @@ public class CrmService {
         Pair<Instant, Instant> utcRange = getUtcRange(vehicleId, start, end);
         return rideRepository.findByVehicleIdAndStartTimeAfterAndEndTimeBefore(
                 vehicleId, utcRange.getFirst(), utcRange.getSecond());
+    }
+
+    public Report getReportForVehicleByChronoUnitInDateRange(
+            Long vehicleId, ReportType reportType, ChronoUnit chronoUnit, LocalDateTime start, LocalDateTime end) {
+        if (!hasAccessToVehicle(vehicleId)) {
+            return null;
+        }
+        Pair<Instant, Instant> utcRange = getUtcRange(vehicleId, start, end);
+        return Report.of(
+                vehicleId,
+                reportType,
+                chronoUnit,
+                utcRange.getFirst(),
+                utcRange.getSecond(),
+                this
+        );
+    }
+
+    public Double getDistanceTravelledKmForVehicleInTimeRange(Long vehicleId, Instant start, Instant end) {
+        return ROUTING_HANDLER.getRouteLength(findGpsPointsForVehicleInUtcRange(vehicleId, start, end));
     }
 
     private Pair<Instant, Instant> getUtcRange(Long vehicleId, LocalDateTime start, LocalDateTime end) {

@@ -1,8 +1,13 @@
 package com.github.dlots.vehiclefleet.data.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.github.dlots.vehiclefleet.util.json.GpsPointSerializer;
 import com.github.dlots.vehiclefleet.util.YandexMapsHandler;
+import com.github.dlots.vehiclefleet.util.json.PointDeserializer;
+import com.github.dlots.vehiclefleet.util.json.VehicleDeserializer;
 import com.vividsolutions.jts.geom.Coordinate;
 import com.vividsolutions.jts.geom.GeometryFactory;
 import com.vividsolutions.jts.geom.Point;
@@ -34,23 +39,32 @@ public class GpsPoint extends AbstractEntity{
         return new GpsPoint(GEOMETRY_FACTORY.createPoint(new Coordinate(x, y)), timestamp);
     }
 
+    public static Point createPoint(Double x, Double y) {
+        return GEOMETRY_FACTORY.createPoint(new Coordinate(x, y));
+    }
+
     @NotNull
     @Column(columnDefinition = "geometry(Point,4326)")
+    @JsonDeserialize(using = PointDeserializer.class)
     @SuppressWarnings("com.haulmont.jpb.UnsupportedTypeWithoutConverterInspection")
     private Point point;
 
     @Transient
+    @JsonIgnore
     private String address;
 
     private Instant timestamp;
 
     @Nullable
     @Transient
+    @JsonIgnore
     private TimeZone enterpriseTimeZone;
 
     @NotNull
     @ManyToOne
     @JoinColumn(name = "vehicle_id")
+    @JsonProperty("vehicleId")
+    @JsonDeserialize(using = VehicleDeserializer.class)
     private Vehicle vehicle;
 
     public Point getPoint() {

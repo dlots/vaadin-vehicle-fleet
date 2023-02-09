@@ -246,4 +246,9 @@ public class Vehicle extends AbstractEntity {
         }
         gpsTrack.forEach(gpsPoint -> gpsPoint.setVehicle(this));
     }
+
+    @Override
+    public String toString() {
+        return String.format("%d %s %s", manufactureYear, vehicleModel, vin);
+    }
 }
