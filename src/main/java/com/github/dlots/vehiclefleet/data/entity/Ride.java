@@ -4,6 +4,8 @@ import com.fasterxml.jackson.annotation.JsonIdentityInfo;
 import com.fasterxml.jackson.annotation.JsonIdentityReference;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.ObjectIdGenerators;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import com.github.dlots.vehiclefleet.util.json.VehicleDeserializer;
 
 import javax.persistence.Entity;
 import javax.persistence.JoinColumn;
@@ -30,6 +32,7 @@ public class Ride extends AbstractEntity {
     @JsonIdentityInfo(generator = ObjectIdGenerators.PropertyGenerator.class, property = "id")
     @JsonIdentityReference(alwaysAsId = true)
     @JsonProperty("vehicleId")
+    @JsonDeserialize(using = VehicleDeserializer.class)
     private Vehicle vehicle;
 
     @NotNull

@@ -8,7 +8,7 @@ import json
 class CurlHandler:
     def __init__(self):
         self.__curl = pycurl.Curl()
-        self.__application_url = os.environ.get('VEHICLE_FLEET_URL')+':8080'
+        self.__application_url = os.environ.get('VEHICLE_FLEET_URL') + ':8080'
         self.username = 'admin'
         self.password = 'password'
         self.__curl.setopt(pycurl.USERPWD, '{}:{}'.format(self.username, self.password))
@@ -42,5 +42,7 @@ class CurlHandler:
         return self.__send_curl_request('drivers', driver)['id']
 
     def post_new_gps_point(self, gps_point):
-        response = self.__send_curl_request('gps', gps_point)
-        return response
+        self.__send_curl_request('gps', gps_point)
+
+    def post_new_ride(self, ride):
+        self.__send_curl_request('rides', ride)

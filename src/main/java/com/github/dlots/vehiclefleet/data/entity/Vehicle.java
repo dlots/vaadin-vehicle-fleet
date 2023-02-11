@@ -62,7 +62,7 @@ public class Vehicle extends AbstractEntity {
     @JsonProperty("enterpriseId")
     private Enterprise enterprise;
 
-    @OneToMany(mappedBy = "vehicle")
+    @OneToMany(mappedBy = "vehicle", cascade = CascadeType.ALL)
     @Nullable
     @JsonDeserialize(contentUsing = DriverDeserializer.class)
     @JsonIdentityInfo(generator = ObjectIdGenerators.PropertyGenerator.class, property = "id")
@@ -105,7 +105,7 @@ public class Vehicle extends AbstractEntity {
     }
 
     @Nullable
-    @JsonIgnore
+    @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
     private Instant purchaseDateTimeUtc;
 
     @Nullable
@@ -175,6 +175,7 @@ public class Vehicle extends AbstractEntity {
     }
 
     @Nullable
+    @JsonIgnore
     public Instant getPurchaseDateTimeUtc() {
         return purchaseDateTimeUtc;
     }

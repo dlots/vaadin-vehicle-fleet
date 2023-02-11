@@ -88,8 +88,8 @@ public class ApiController {
 
     @PostMapping(API + GPS)
     @RolesAllowed(Manager.ROLE)
-    public GpsPoint addNewGpsPointForVehicle(@RequestBody GpsPoint gpsPoint) {
-        return crmService.createNewGpsPoint(gpsPoint);
+    public List<GpsPoint> addNewGpsPointForVehicle(@RequestBody GpsPoint[] gpsPoints) {
+        return crmService.createNewGpsPoints(gpsPoints);
     }
 
     @GetMapping(API + GPS + ID)
@@ -99,6 +99,12 @@ public class ApiController {
             @RequestParam("start") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime start,
             @RequestParam("end") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime end) {
         return crmService.findGpsPointsForVehicleInDateRange(id, start, end);
+    }
+
+    @PostMapping(API + RIDES)
+    @RolesAllowed(Manager.ROLE)
+    public Ride addNewRideForVehicle(@RequestBody Ride ride) {
+        return crmService.createNewRide(ride);
     }
 
     @GetMapping(API + RIDES_TRACK + ID)

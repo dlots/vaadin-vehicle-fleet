@@ -2,6 +2,7 @@ package com.github.dlots.vehiclefleet.views;
 
 import com.github.dlots.vehiclefleet.service.ManagerService;
 import com.github.dlots.vehiclefleet.views.enterprises.EnterprisesView;
+import com.github.dlots.vehiclefleet.views.report.ReportsView;
 import com.github.dlots.vehiclefleet.views.vehiclemodels.VehicleModelsView;
 import com.github.dlots.vehiclefleet.views.vehicles.VehiclesView;
 import com.vaadin.flow.component.UI;
@@ -39,7 +40,10 @@ public class MainLayout extends AppLayout {
         RouterLink modelsLink = new RouterLink("Vehicle models", VehicleModelsView.class);
         modelsLink.setHighlightCondition(HighlightConditions.sameLocation());
 
-        return new VerticalLayout(enterprisesLink, vehiclesLink, modelsLink);
+        RouterLink reportsLink = new RouterLink("Reports", ReportsView.class);
+        modelsLink.setHighlightCondition(HighlightConditions.sameLocation());
+
+        return new VerticalLayout(enterprisesLink, vehiclesLink, modelsLink, reportsLink);
     }
 
     private void addHeaderContent() {

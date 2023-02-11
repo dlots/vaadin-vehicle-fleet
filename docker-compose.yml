@@ -1,0 +1,34 @@
+services:
+  postgres-vehicles:
+    container_name: postgres-vehicles
+    image: dlots42/postgres-vehicles:1.0
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-changeme}
+      POSTGRES_DB: ${POSTGRES_DB:-vehicles}
+      PGDATA: /data/postgres-vehicles
+    ports:
+      - "5432:5432"
+    networks:
+      - postgres-vehicles
+    restart: unless-stopped
+
+  vehicles-app:
+    container_name: vehicles-app
+    image: dlots42/vehicles-app:1.0
+    environment:
+      YANDEX_API_KEY: ${YANDEX_API_KEY}
+      GRAPHHOPPER_API_KEY: ${GRAPHHOPPER_API_KEY}
+    ports:
+      - "8090:8080"
+    networks:
+      - postgres-vehicles
+    restart: unless-stopped
+
+networks:
+  postgres-vehicles:
+    driver: bridge
+
+volumes:
+  postgres-vehicles:
+  vehicles-app:

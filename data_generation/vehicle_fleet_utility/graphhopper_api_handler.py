@@ -2,7 +2,7 @@ import os
 import requests
 
 
-def get_gps_route(start, finish):
+def get_gps_route(start, finish, seed):
     url = "https://graphhopper.com/api/1/route"
     query = {
         "point": [start, finish],
@@ -12,8 +12,11 @@ def get_gps_route(start, finish):
     round_trip = True
     if round_trip:
         query["algorithm"] = "round_trip"
-        query["round_trip.distance"] = "3000"
+        query["round_trip.distance"] = "5000"
+        query["round_trip.seed"] = seed
         query["ch.disable"] = True
         query["point"].pop()
     response = requests.get(url, params=query)
-    return response.json()['paths'][0]['points']['coordinates']
+    if response.status_code == 200:
+        return response.json()['paths'][0]['points']['coordinates']
+    return None

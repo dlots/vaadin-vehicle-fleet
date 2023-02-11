@@ -15,6 +15,7 @@ import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.time.temporal.ChronoUnit;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
@@ -168,12 +169,12 @@ public class CrmService {
     }
 
     public void saveDrivers(Driver... drivers) {
-        driverRepository.saveAllAndFlush(List.of(drivers));
+        driverRepository.saveAll(List.of(drivers));
     }
 
-    public GpsPoint createNewGpsPoint(GpsPoint gpsPoint) {
-        if (hasAccessToVehicle(gpsPoint.getVehicle().getId())) {
-            return gpsPointRepository.saveAndFlush(gpsPoint);
+    public List<GpsPoint> createNewGpsPoints(GpsPoint[] gpsPoints) {
+        if (hasAccessToVehicle(gpsPoints[0].getVehicle().getId())) {
+            return gpsPointRepository.saveAllAndFlush(Arrays.asList(gpsPoints));
         }
         return null;
     }
@@ -192,6 +193,13 @@ public class CrmService {
         ZoneId zoneId = enterpriseRepository.findTimeZoneByVehicleId(vehicleId).toZoneId();
         return gpsPointRepository.findByVehicleIdAndTimestampBetween(
                 vehicleId, ZonedDateTime.of(start, zoneId).toInstant(), ZonedDateTime.of(end, zoneId).toInstant());
+    }
+
+    public Ride createNewRide(Ride ride) {
+        if (hasAccessToVehicle(ride.getVehicle().getId())) {
+            return rideRepository.saveAndFlush(ride);
+        }
+        return null;
     }
 
     public List<GpsPoint> findRidesTrackByVehicleIdInDateRange(Long vehicleId, LocalDateTime start, LocalDateTime end) {
