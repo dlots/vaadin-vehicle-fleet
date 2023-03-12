@@ -1,4 +1,4 @@
-package com.github.dlots.vehiclefleet.data;
+package com.github.dlots.vehiclefleet.service.report;
 
 import com.github.dlots.vehiclefleet.service.CrmService;
 import org.springframework.data.util.Pair;
@@ -19,14 +19,9 @@ public class DistanceTravelledReport extends AbstractReport implements Report {
         Instant periodEnd;
         do {
             periodEnd = nextPeriodEnd(periodStart);
-            if (periodEnd.isAfter(endTime)) {
-                periodEnd = endTime;
-            }
-            result.add(Pair.of(
-                    periodEnd,
-                    crmService.getDistanceTravelledKmForVehicleInTimeRange(vehicleId, periodStart, periodEnd).toString()
-            ));
+            double distanceTravelled = crmService.getDistanceTravelledKmForVehicleInTimeRange(vehicleId, periodStart, periodEnd);
+            result.add(Pair.of(periodStart, String.format("%.3f", distanceTravelled)));
             periodStart = periodEnd;
-        } while (periodEnd != endTime);
+        } while (periodEnd.isBefore(endTime));
     }
 }

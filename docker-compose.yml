@@ -18,7 +18,6 @@ services:
     image: dlots42/vehicles-app:1.0
     environment:
       YANDEX_API_KEY: ${YANDEX_API_KEY}
-      GRAPHHOPPER_API_KEY: ${GRAPHHOPPER_API_KEY}
     ports:
       - "8090:8080"
     networks:

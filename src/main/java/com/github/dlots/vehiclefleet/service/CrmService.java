@@ -1,10 +1,9 @@
 package com.github.dlots.vehiclefleet.service;
 
-import com.github.dlots.vehiclefleet.data.Report;
-import com.github.dlots.vehiclefleet.data.ReportType;
 import com.github.dlots.vehiclefleet.data.entity.*;
 import com.github.dlots.vehiclefleet.data.repository.*;
-import com.github.dlots.vehiclefleet.util.RoutingHandler;
+import com.github.dlots.vehiclefleet.service.report.Report;
+import com.github.dlots.vehiclefleet.service.report.ReportType;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.util.Pair;
 import org.springframework.stereotype.Service;
@@ -24,8 +23,6 @@ import java.util.stream.Stream;
 
 @Service
 public class CrmService {
-    private static final RoutingHandler ROUTING_HANDLER = new RoutingHandler();
-
     private final VehicleRepository vehicleRepository;
     private final VehicleModelRepository vehicleModelRepository;
     private final EnterpriseRepository enterpriseRepository;
@@ -258,7 +255,12 @@ public class CrmService {
     }
 
     public Double getDistanceTravelledKmForVehicleInTimeRange(Long vehicleId, Instant start, Instant end) {
-        return ROUTING_HANDLER.getRouteLength(findGpsPointsForVehicleInUtcRange(vehicleId, start, end));
+        List<GpsPoint> gpsTrack = findGpsPointsForVehicleInUtcRange(vehicleId, start, end);
+        double result = 0;
+        for (int i = 0; i < gpsTrack.size() - 1; i++) {
+            result += gpsTrack.get(i).getDistanceKm(gpsTrack.get(i + 1));
+        }
+        return result;
     }
 
     private Pair<Instant, Instant> getUtcRange(Long vehicleId, LocalDateTime start, LocalDateTime end) {

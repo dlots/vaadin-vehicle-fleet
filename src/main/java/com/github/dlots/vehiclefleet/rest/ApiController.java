@@ -1,7 +1,7 @@
 package com.github.dlots.vehiclefleet.rest;
 
-import com.github.dlots.vehiclefleet.data.Report;
-import com.github.dlots.vehiclefleet.data.ReportType;
+import com.github.dlots.vehiclefleet.service.report.Report;
+import com.github.dlots.vehiclefleet.service.report.ReportType;
 import com.github.dlots.vehiclefleet.data.entity.*;
 import com.github.dlots.vehiclefleet.service.CrmService;
 import org.springframework.format.annotation.DateTimeFormat;

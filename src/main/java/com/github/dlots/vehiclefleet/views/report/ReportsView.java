@@ -1,7 +1,7 @@
 package com.github.dlots.vehiclefleet.views.report;
 
-import com.github.dlots.vehiclefleet.data.Report;
-import com.github.dlots.vehiclefleet.data.ReportType;
+import com.github.dlots.vehiclefleet.service.report.Report;
+import com.github.dlots.vehiclefleet.service.report.ReportType;
 import com.github.dlots.vehiclefleet.data.entity.Enterprise;
 import com.github.dlots.vehiclefleet.data.entity.Vehicle;
 import com.github.dlots.vehiclefleet.service.CrmService;
@@ -101,7 +101,7 @@ public class ReportsView extends HorizontalLayout {
                 endDatePicker.getValue().atStartOfDay()
         );
         reportGrid.getColumns().get(0).setHeader(
-                String.format("End of period date (by %s)", report.getPeriodType().toString())
+                String.format("Start of period date (by %s)", report.getPeriodType().toString())
         );
         reportGrid.getColumns().get(1).setHeader(report.getReportType().toString());
         reportGrid.setItems(report.getResult());

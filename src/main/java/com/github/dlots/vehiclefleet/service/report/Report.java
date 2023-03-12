@@ -1,4 +1,4 @@
-package com.github.dlots.vehiclefleet.data;
+package com.github.dlots.vehiclefleet.service.report;
 
 import com.github.dlots.vehiclefleet.service.CrmService;
 import org.springframework.data.util.Pair;
@@ -13,8 +13,6 @@ public interface Report {
     ReportType getReportType();
 
     ChronoUnit getPeriodType();
-
-    void setReportResult(List<Pair<Instant, String>> result);
 
     static DistanceTravelledReport of(Long vehicleId, ReportType reportType, ChronoUnit periodType, Instant startTime, Instant endTime, CrmService crmService) {
         if (!List.of(ChronoUnit.DAYS, ChronoUnit.MONTHS, ChronoUnit.YEARS).contains(periodType)) {
